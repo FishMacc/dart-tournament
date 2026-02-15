@@ -1,0 +1,246 @@
+// ============================================================
+// Dart Game Logic — X01 (301, 501, etc.)
+// ============================================================
+
+/**
+ * Valid single-dart scores (value, multiplier).
+ * Multiplier: 1 = Single, 2 = Double, 3 = Triple
+ * Special: Bull = 25 (single), Bullseye = 25 x 2 = 50
+ */
+export const VALID_NUMBERS = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25,
+];
+
+export const VALID_MULTIPLIERS = [1, 2, 3];
+
+/**
+ * Calculate the points for a single dart throw.
+ * @param {number} value - The number hit (0-20 or 25)
+ * @param {number} multiplier - 1 (Single), 2 (Double), 3 (Triple)
+ * @returns {number} The score
+ */
+export function calculateThrowScore(value, multiplier) {
+    if (!VALID_NUMBERS.includes(value)) {
+        throw new Error(`Invalid dart value: ${value}`);
+    }
+    if (!VALID_MULTIPLIERS.includes(multiplier)) {
+        throw new Error(`Invalid multiplier: ${multiplier}`);
+    }
+    // No triple on bull
+    if (value === 25 && multiplier === 3) {
+        throw new Error('Triple Bull is not allowed');
+    }
+    // Miss
+    if (value === 0) return 0;
+    return value * multiplier;
+}
+
+/**
+ * Check if a throw is a valid double-out finish.
+ * @param {number} value
+ * @param {number} multiplier
+ * @returns {boolean}
+ */
+export function isDoubleOut(value, multiplier) {
+    return multiplier === 2;
+}
+
+/**
+ * Process a single dart throw in a X01 game.
+ * Returns the new remaining score and whether the throw was a bust.
+ *
+ * Rules:
+ * - Score must reach exactly 0
+ * - Must finish on a double (double-out)
+ * - If score goes below 0 or to 1, it's a bust (score resets)
+ *
+ * @param {number} remainingScore - Current remaining score before throw
+ * @param {number} value - Dart number (0-20, 25)
+ * @param {number} multiplier - 1, 2, or 3
+ * @returns {{ newScore: number, isBust: boolean, isFinish: boolean }}
+ */
+export function processThrow(remainingScore, value, multiplier) {
+    const throwScore = calculateThrowScore(value, multiplier);
+    const newScore = remainingScore - throwScore;
+
+    // Bust: score goes below 0
+    if (newScore < 0) {
+        return { newScore: remainingScore, isBust: true, isFinish: false };
+    }
+
+    // Bust: score reaches exactly 1 (can't finish with double)
+    if (newScore === 1) {
+        return { newScore: remainingScore, isBust: true, isFinish: false };
+    }
+
+    // Finish: score reaches exactly 0 with a double
+    if (newScore === 0) {
+        if (isDoubleOut(value, multiplier)) {
+            return { newScore: 0, isBust: false, isFinish: true };
+        }
+        // Bust: reached 0 but not with a double
+        return { newScore: remainingScore, isBust: true, isFinish: false };
+    }
+
+    // Normal throw
+    return { newScore, isBust: false, isFinish: false };
+}
+
+/**
+ * Get all possible checkout combinations for a given score.
+ * Only returns checkouts achievable in 1, 2, or 3 darts.
+ * Last dart must be a double.
+ *
+ * @param {number} score - Remaining score
+ * @returns {string|null} A checkout suggestion string, or null
+ */
+export function getCheckoutSuggestion(score) {
+    const checkouts = {
+        170: 'T20 T20 Bull',
+        167: 'T20 T19 Bull',
+        164: 'T20 T18 Bull',
+        161: 'T20 T17 Bull',
+        160: 'T20 T20 D20',
+        158: 'T20 T20 D19',
+        157: 'T20 T19 D20',
+        156: 'T20 T20 D18',
+        155: 'T20 T19 D19',
+        154: 'T20 T18 D20',
+        153: 'T20 T19 D18',
+        152: 'T20 T20 D16',
+        151: 'T20 T17 D20',
+        150: 'T20 T18 D18',
+        149: 'T20 T19 D16',
+        148: 'T20 T16 D20',
+        147: 'T20 T17 D18',
+        146: 'T20 T18 D16',
+        145: 'T20 T15 D20',
+        144: 'T20 T18 D15',
+        143: 'T20 T17 D16',
+        142: 'T20 T14 D20',
+        141: 'T20 T19 D12',
+        140: 'T20 T20 D10',
+        139: 'T20 T13 D20',
+        138: 'T20 T18 D12',
+        137: 'T20 T19 D10',
+        136: 'T20 T20 D8',
+        135: 'T20 T17 D12',
+        134: 'T20 T14 D16',
+        133: 'T20 T19 D8',
+        132: 'T20 T16 D12',
+        131: 'T20 T13 D16',
+        130: 'T20 T18 D8',
+        129: 'T19 T16 D12',
+        128: 'T18 T14 D16',
+        127: 'T20 T17 D8',
+        126: 'T19 T19 D6',
+        125: 'T20 T19 D4',
+        124: 'T20 T14 D11',
+        123: 'T19 T16 D9',
+        122: 'T18 T18 D7',
+        121: 'T20 T11 D14',
+        120: 'T20 S20 D20',
+        119: 'T19 T12 D13',
+        118: 'T20 S18 D20',
+        117: 'T20 S17 D20',
+        116: 'T20 S16 D20',
+        115: 'T20 S15 D20',
+        114: 'T20 S14 D20',
+        113: 'T20 S13 D20',
+        112: 'T20 S12 D20',
+        111: 'T20 S11 D20',
+        110: 'T20 S10 D20',
+        109: 'T20 S9 D20',
+        108: 'T20 S8 D20',
+        107: 'T19 S10 D20',
+        106: 'T20 S6 D20',
+        105: 'T20 S5 D20',
+        104: 'T18 S10 D20',
+        103: 'T19 S6 D20',
+        102: 'T20 S10 D16',
+        101: 'T17 S10 D20',
+        100: 'T20 D20',
+        99: 'T19 S10 D16',
+        98: 'T20 D19',
+        97: 'T19 D20',
+        96: 'T20 D18',
+        95: 'T19 D19',
+        94: 'T18 D20',
+        93: 'T19 D18',
+        92: 'T20 D16',
+        91: 'T17 D20',
+        90: 'T18 D18',
+        89: 'T19 D16',
+        88: 'T16 D20',
+        87: 'T17 D18',
+        86: 'T18 D16',
+        85: 'T15 D20',
+        84: 'T20 D12',
+        83: 'T17 D16',
+        82: 'T14 D20',
+        81: 'T19 D12',
+        80: 'T20 D10',
+        79: 'T13 D20',
+        78: 'T18 D12',
+        77: 'T19 D10',
+        76: 'T20 D8',
+        75: 'T17 D12',
+        74: 'T14 D16',
+        73: 'T19 D8',
+        72: 'T16 D12',
+        71: 'T13 D16',
+        70: 'T18 D8',
+        69: 'T19 D6',
+        68: 'T20 D4',
+        67: 'T17 D8',
+        66: 'T10 D18',
+        65: 'T19 D4',
+        64: 'T16 D8',
+        63: 'T13 D12',
+        62: 'T10 D16',
+        61: 'T15 D8',
+        60: 'S20 D20',
+        59: 'S19 D20',
+        58: 'S18 D20',
+        57: 'S17 D20',
+        56: 'S16 D20',
+        55: 'S15 D20',
+        54: 'S14 D20',
+        53: 'S13 D20',
+        52: 'S12 D20',
+        51: 'S11 D20',
+        50: 'Bull',
+        49: 'S9 D20',
+        48: 'S8 D20',
+        47: 'S7 D20',
+        46: 'S6 D20',
+        45: 'S13 D16',
+        44: 'S4 D20',
+        43: 'S3 D20',
+        42: 'S10 D16',
+        41: 'S9 D16',
+        40: 'D20',
+        39: 'S7 D16',
+        38: 'D19',
+        36: 'D18',
+        34: 'D17',
+        32: 'D16',
+        30: 'D15',
+        28: 'D14',
+        26: 'D13',
+        24: 'D12',
+        22: 'D11',
+        20: 'D10',
+        18: 'D9',
+        16: 'D8',
+        14: 'D7',
+        12: 'D6',
+        10: 'D5',
+        8: 'D4',
+        6: 'D3',
+        4: 'D2',
+        2: 'D1',
+    };
+    return checkouts[score] || null;
+}
