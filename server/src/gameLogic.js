@@ -52,15 +52,17 @@ export function isDoubleOut(value, multiplier) {
  *
  * Rules:
  * - Score must reach exactly 0
- * - Must finish on a double (double-out)
- * - If score goes below 0 or to 1, it's a bust (score resets)
+ * - If doubleOut is true: must finish on a double, score=1 is bust
+ * - If doubleOut is false: any throw reaching 0 is a finish
+ * - If score goes below 0, it's a bust (score resets)
  *
  * @param {number} remainingScore - Current remaining score before throw
  * @param {number} value - Dart number (0-20, 25)
  * @param {number} multiplier - 1, 2, or 3
+ * @param {boolean} [doubleOut=true] - Whether double-out rule is active
  * @returns {{ newScore: number, isBust: boolean, isFinish: boolean }}
  */
-export function processThrow(remainingScore, value, multiplier) {
+export function processThrow(remainingScore, value, multiplier, doubleOut = true) {
     const throwScore = calculateThrowScore(value, multiplier);
     const newScore = remainingScore - throwScore;
 
@@ -69,13 +71,17 @@ export function processThrow(remainingScore, value, multiplier) {
         return { newScore: remainingScore, isBust: true, isFinish: false };
     }
 
-    // Bust: score reaches exactly 1 (can't finish with double)
-    if (newScore === 1) {
+    // Double-out: score=1 is bust (can't finish with double from 1)
+    if (doubleOut && newScore === 1) {
         return { newScore: remainingScore, isBust: true, isFinish: false };
     }
 
-    // Finish: score reaches exactly 0 with a double
+    // Finish: score reaches exactly 0
     if (newScore === 0) {
+        if (!doubleOut) {
+            // No double required — any throw reaching 0 is a finish
+            return { newScore: 0, isBust: false, isFinish: true };
+        }
         if (isDoubleOut(value, multiplier)) {
             return { newScore: 0, isBust: false, isFinish: true };
         }
@@ -95,7 +101,27 @@ export function processThrow(remainingScore, value, multiplier) {
  * @param {number} score - Remaining score
  * @returns {string|null} A checkout suggestion string, or null
  */
-export function getCheckoutSuggestion(score) {
+export function getCheckoutSuggestion(score, doubleOut = true) {
+    // 1. Single Out Strategy (Prioritize 1-dart finish on any target)
+    if (!doubleOut) {
+        // Can we finish in 1 dart?
+        // Single 1-20
+        if (score >= 1 && score <= 20) return `S${score}`;
+        // Bull (25) or Bullseye (50)
+        if (score === 25) return 'Bull';
+        if (score === 50) return 'Bullseye';
+
+        // Double (if even)
+        if (score % 2 === 0 && score <= 40) return `D${score / 2}`;
+
+        // Triple (if divisible by 3)
+        if (score % 3 === 0 && score <= 60) return `T${score / 3}`;
+
+        // If > 60 or no 1-dart finish, fall back to standard checkout (usually good enough)
+        // But for Single Out, we might prefer "S20 ..." over "T20 ...".
+        // For now, standard checkout is acceptable fallback.
+    }
+
     const checkouts = {
         170: 'T20 T20 Bull',
         167: 'T20 T19 Bull',
@@ -229,6 +255,7 @@ export function getCheckoutSuggestion(score) {
         30: 'D15',
         28: 'D14',
         26: 'D13',
+        25: 'S9 D8',
         24: 'D12',
         22: 'D11',
         20: 'D10',

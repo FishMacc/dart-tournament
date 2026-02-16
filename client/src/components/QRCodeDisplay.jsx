@@ -1,37 +1,52 @@
 import { useState, useEffect } from 'react';
 
 export default function QRCodeDisplay() {
-    const [lanInfo, setLanInfo] = useState(null);
+    const [qrData, setQrData] = useState(null);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         fetch('/api/lan-info')
             .then((res) => res.json())
-            .then((data) => setLanInfo(data))
-            .catch((err) => console.error('Failed to load LAN info:', err));
+            .then((data) => setQrData(data))
+            .catch((err) => {
+                console.error('Failed to load QR code data:', err);
+                setError('QR-Code konnte nicht geladen werden');
+            });
     }, []);
 
-    if (!lanInfo) {
+    if (error) {
         return (
             <div className="qr-section">
-                <p className="text-muted">Lade QR-Code...</p>
+                <p className="text-muted">{error}</p>
+            </div>
+        );
+    }
+
+    if (!qrData) {
+        return (
+            <div className="qr-section">
+                <p className="text-muted">QR-Code wird geladen...</p>
             </div>
         );
     }
 
     return (
-        <div className="qr-section animate-scale-in">
+        <div className="qr-section">
+            <h3 style={{ marginBottom: '1rem' }}>📱 Mobile Ansicht</h3>
+            <p className="text-muted mb-2" style={{ fontSize: '0.9rem' }}>
+                Scanne den QR-Code, um auf deinem Handy Punkte einzutragen
+            </p>
+
             <div className="qr-code-container">
-                <h3>📱 Spieler einladen</h3>
-                <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-                    QR-Code scannen, um dem Turnier beizutreten
-                </p>
                 <img
-                    src={lanInfo.qrCode}
-                    alt="QR Code zum Beitreten"
-                    id="qr-code-image"
-                    style={{ background: 'rgba(0,0,0,0.4)', padding: '1rem', borderRadius: '12px' }}
+                    src={qrData.qrCode}
+                    alt="QR Code für Mobile Ansicht"
+                    width="200"
+                    height="200"
                 />
-                <div className="qr-url">{lanInfo.url}/mobile</div>
+                <div className="qr-url">
+                    {qrData.url}/mobile
+                </div>
             </div>
         </div>
     );

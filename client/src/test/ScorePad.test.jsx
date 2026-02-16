@@ -53,4 +53,83 @@ describe('ScorePad', () => {
         fireEvent.click(screen.getByText('20'));
         expect(called).toBe(false);
     });
+
+    it('should render Bull button', () => {
+        render(<ScorePad onThrow={() => { }} disabled={false} />);
+        expect(screen.getByText(/Bull/)).toBeInTheDocument();
+    });
+
+    it('should render Miss button', () => {
+        render(<ScorePad onThrow={() => { }} disabled={false} />);
+        expect(screen.getByText(/Miss/)).toBeInTheDocument();
+    });
+
+    it('should send value=0, multiplier=1 on Miss click', () => {
+        let received = null;
+        render(<ScorePad onThrow={(v, m) => { received = { v, m }; }} disabled={false} />);
+        fireEvent.click(screen.getByText(/Miss/));
+        expect(received).toEqual({ v: 0, m: 1 });
+    });
+
+    it('should send value=25 on Bull click with single multiplier', () => {
+        let received = null;
+        render(<ScorePad onThrow={(v, m) => { received = { v, m }; }} disabled={false} />);
+        fireEvent.click(screen.getByText(/Bull/));
+        expect(received).toEqual({ v: 25, m: 1 });
+    });
+
+    it('should send value=25, multiplier=2 on Bull click with Double', () => {
+        let received = null;
+        render(<ScorePad onThrow={(v, m) => { received = { v, m }; }} disabled={false} />);
+        fireEvent.click(screen.getByText('Double'));
+        fireEvent.click(screen.getByText(/Bull/));
+        expect(received).toEqual({ v: 25, m: 2 });
+    });
+
+    it('should map triple to double on Bull (no triple bull)', () => {
+        let received = null;
+        render(<ScorePad onThrow={(v, m) => { received = { v, m }; }} disabled={false} />);
+        fireEvent.click(screen.getByText('Triple'));
+        fireEvent.click(screen.getByText(/Bull/));
+        // Triple on bull maps to double (no triple bull allowed)
+        expect(received).toEqual({ v: 25, m: 2 });
+    });
+
+    it('should render Undo button', () => {
+        render(<ScorePad onThrow={() => { }} onUndo={() => { }} disabled={false} canUndo={true} />);
+        expect(screen.getByText(/Undo/)).toBeInTheDocument();
+    });
+
+    it('should call onUndo when Undo button is clicked', () => {
+        let undoCalled = false;
+        render(<ScorePad onThrow={() => { }} onUndo={() => { undoCalled = true; }} disabled={false} canUndo={true} />);
+        fireEvent.click(screen.getByText(/Undo/));
+        expect(undoCalled).toBe(true);
+    });
+
+    it('should disable Undo button when canUndo is false', () => {
+        render(<ScorePad onThrow={() => { }} onUndo={() => { }} disabled={false} canUndo={false} />);
+        const undoBtn = screen.getByText(/Undo/).closest('button');
+        expect(undoBtn.disabled).toBe(true);
+    });
+
+    it('should not fire Miss when disabled', () => {
+        let called = false;
+        render(<ScorePad onThrow={() => { called = true; }} disabled={true} />);
+        fireEvent.click(screen.getByText(/Miss/));
+        expect(called).toBe(false);
+    });
+
+    it('should not fire Bull when disabled', () => {
+        let called = false;
+        render(<ScorePad onThrow={() => { called = true; }} disabled={true} />);
+        fireEvent.click(screen.getByText(/Bull/));
+        expect(called).toBe(false);
+    });
+
+    it('should render 25 button (number 25 / Bull)', () => {
+        render(<ScorePad onThrow={() => { }} disabled={false} />);
+        // Bull button represents 25
+        expect(screen.getByText(/Bull/)).toBeInTheDocument();
+    });
 });

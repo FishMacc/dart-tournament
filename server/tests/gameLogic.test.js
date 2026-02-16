@@ -115,4 +115,65 @@ describe('getCheckoutSuggestion', () => {
         expect(getCheckoutSuggestion(171)).toBeNull();
         expect(getCheckoutSuggestion(1)).toBeNull();
     });
+
+    it('should return null for score 0', () => {
+        expect(getCheckoutSuggestion(0)).toBeNull();
+    });
+
+    it('should return null for scores with no entry (e.g. 37, 35, 33)', () => {
+        expect(getCheckoutSuggestion(37)).toBeNull();
+        expect(getCheckoutSuggestion(35)).toBeNull();
+        expect(getCheckoutSuggestion(33)).toBeNull();
+    });
+
+    it('should return checkout for bullseye finish (50)', () => {
+        expect(getCheckoutSuggestion(50)).toBe('Bull');
+    });
+
+    it('should return checkout for all even numbers 2-40', () => {
+        // All even numbers from 2 to 40 should have a double checkout
+        for (let i = 2; i <= 40; i += 2) {
+            expect(getCheckoutSuggestion(i)).not.toBeNull();
+        }
+    });
+});
+
+// ==========================================
+// processThrow without Double Out
+// ==========================================
+describe('processThrow (doubleOut=false)', () => {
+    it('should allow finishing with a single (no double required)', () => {
+        const result = processThrow(20, 20, 1, false); // S20 reaches 0
+        expect(result.newScore).toBe(0);
+        expect(result.isBust).toBe(false);
+        expect(result.isFinish).toBe(true);
+    });
+
+    it('should allow finishing with a triple', () => {
+        const result = processThrow(60, 20, 3, false); // T20 reaches 0
+        expect(result.newScore).toBe(0);
+        expect(result.isBust).toBe(false);
+        expect(result.isFinish).toBe(true);
+    });
+
+    it('should allow score=1 (not bust without double-out)', () => {
+        const result = processThrow(21, 20, 1, false); // S20 -> 1
+        expect(result.newScore).toBe(1);
+        expect(result.isBust).toBe(false);
+        expect(result.isFinish).toBe(false);
+    });
+
+    it('should finish from score=1 with S1', () => {
+        const result = processThrow(1, 1, 1, false); // S1 -> 0
+        expect(result.newScore).toBe(0);
+        expect(result.isBust).toBe(false);
+        expect(result.isFinish).toBe(true);
+    });
+
+    it('should still bust if score goes below 0', () => {
+        const result = processThrow(10, 20, 1, false); // S20 on 10 -> -10
+        expect(result.newScore).toBe(10);
+        expect(result.isBust).toBe(true);
+        expect(result.isFinish).toBe(false);
+    });
 });

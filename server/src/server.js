@@ -52,13 +52,16 @@ function getLanIP() {
 app.get('/api/lan-info', async (req, res) => {
     try {
         const ip = getLanIP();
-        const url = `http://${ip}:${PORT}`;
+        const url = `http://${ip}:${PORT}/mobile`;
+
+        // Generate QR code for the mobile URL
         const qrDataUrl = await QRCode.toDataURL(url, {
             width: 300,
             margin: 2,
             color: { dark: '#ffffff', light: '#00000000' },
         });
-        res.json({ ip, port: PORT, url, qrCode: qrDataUrl });
+
+        res.json({ ip, port: PORT, url: `http://${ip}:${PORT}`, mobileUrl: url, qrCode: qrDataUrl });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -69,12 +72,23 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: Date.now() });
 });
 
-// -------- Serve Frontend (Production) --------
+// -------- Serve Frontend --------
+import fs from 'fs';
 const clientBuildPath = path.join(__dirname, '../../client/dist');
-app.use(express.static(clientBuildPath));
-app.get('*', (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
-});
+
+if (fs.existsSync(clientBuildPath)) {
+    app.use(express.static(clientBuildPath));
+    // SPA fallback: all non-API routes serve index.html
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(clientBuildPath, 'index.html'));
+    });
+} else {
+    app.get('*', (req, res) => {
+        res.status(200).send(
+            '<h1>Client not built yet</h1><p>Run <code>npm run build</code> in the client directory, then restart the server.</p>'
+        );
+    });
+}
 
 // -------- Start Server --------
 

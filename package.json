@@ -4,7 +4,7 @@
     "private": true,
     "description": "Local LAN Dart Tournament Software",
     "scripts": {
-        "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+        "dev": "npx concurrently \"npm run dev:server\" \"npm run dev:client\"",
         "dev:server": "cd server && npm run dev",
         "dev:client": "cd client && npm run dev",
         "test": "cd server && npm test",

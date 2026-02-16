@@ -44,12 +44,17 @@ export function totalRounds(bracketSize) {
  * Generate a single-elimination bracket from a list of players.
  * Players are shuffled randomly, then placed into the bracket.
  * If the number of players is not a power of 2, byes are given.
+ * 
+ * Strategy: Calculate number of byes (bracketSize - players).
+ * Create that many "Bye Matches" (Player vs Null).
+ * The rest are "Real Matches" (Player vs Player).
+ * This guarantees no null-null matches.
  *
  * @param {object[]} players - Array of player objects
  * @param {number} startingScore - e.g. 501
  * @returns {object[][]} rounds - Array of rounds, each containing matches
  */
-export function generateBracket(players, startingScore = 501) {
+export function generateBracket(players, startingScore = 501, settings = {}) {
     if (!players || players.length < 2) {
         throw new Error('At least 2 players are required');
     }
@@ -58,29 +63,32 @@ export function generateBracket(players, startingScore = 501) {
     const bracketSize = nextPowerOf2(shuffled.length);
     const numRounds = totalRounds(bracketSize);
     const numFirstRoundMatches = bracketSize / 2;
+    const numByes = bracketSize - shuffled.length;
 
-    // Pad with nulls for byes
-    const paddedPlayers = [...shuffled];
-    while (paddedPlayers.length < bracketSize) {
-        paddedPlayers.push(null);
+    const firstRound = [];
+    let playerIdx = 0;
+
+    // 1. Create Bye Matches (One player advances automatically)
+    for (let i = 0; i < numByes; i++) {
+        const p1 = shuffled[playerIdx++];
+        // p2 is null
+        const match = createMatch(p1, null, 0, i, startingScore, settings);
+
+        // Auto-set winner and status
+        match.winner = p1;
+        match.status = 'bye';
+
+        firstRound.push(match);
     }
 
-    // Build first round
-    const firstRound = [];
-    for (let i = 0; i < numFirstRoundMatches; i++) {
-        const p1 = paddedPlayers[i * 2];
-        const p2 = paddedPlayers[i * 2 + 1];
-        const match = createMatch(p1, p2, 0, i, startingScore);
-
-        // If one player is null, it's a bye — auto-advance
-        if (!p1 && p2) {
-            match.winner = p2;
-            match.status = 'bye';
-        } else if (p1 && !p2) {
-            match.winner = p1;
-            match.status = 'bye';
-        }
-
+    // 2. Create Real Matches (Two players fight)
+    // Total matches in R1 is numFirstRoundMatches.
+    // We already made numByes matches.
+    // Remaining matches = numFirstRoundMatches - numByes.
+    for (let i = numByes; i < numFirstRoundMatches; i++) {
+        const p1 = shuffled[playerIdx++];
+        const p2 = shuffled[playerIdx++];
+        const match = createMatch(p1, p2, 0, i, startingScore, settings);
         firstRound.push(match);
     }
 
@@ -90,13 +98,13 @@ export function generateBracket(players, startingScore = 501) {
     for (let r = 1; r < numRounds; r++) {
         const round = [];
         for (let i = 0; i < matchesInRound; i++) {
-            round.push(createMatch(null, null, r, i, startingScore));
+            round.push(createMatch(null, null, r, i, startingScore, settings));
         }
         rounds.push(round);
         matchesInRound /= 2;
     }
 
-    // Auto-advance byes to next round
+    // Advance the winners from the bye matches into Round 2
     advanceByes(rounds);
 
     return rounds;
@@ -107,12 +115,14 @@ export function generateBracket(players, startingScore = 501) {
  * @param {object[][]} rounds
  */
 export function advanceByes(rounds) {
-    for (let r = 0; r < rounds.length - 1; r++) {
-        for (let m = 0; m < rounds[r].length; m++) {
-            const match = rounds[r][m];
-            if (match.status === 'bye' && match.winner) {
-                advanceWinner(rounds, r, m, match.winner);
-            }
+    if (rounds.length < 2) return;
+
+    // Only Round 0 can have created byes with this generation strategy
+    const r = 0;
+    for (let m = 0; m < rounds[r].length; m++) {
+        const match = rounds[r][m];
+        if (match.status === 'bye' && match.winner) {
+            advanceWinner(rounds, r, m, match.winner);
         }
     }
 }
