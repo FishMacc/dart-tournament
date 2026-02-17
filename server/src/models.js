@@ -82,6 +82,15 @@ export function createTournament(type = '501', legsToWin = 1, settings = {}) {
       doubleOut: settings.doubleOut !== false,
       autoStartMatches: settings.autoStartMatches || false,
       shufflePlayers: settings.shufflePlayers || false,
+      entryFee: Math.max(0, Number(settings.entryFee) || 0),
+      distributionMode: ['winner_100', 'split_70_30', 'split_50_30_20', 'custom'].includes(settings.distributionMode) ? settings.distributionMode : 'winner_100',
+      distributionValues: (() => {
+        const v = settings.distributionValues;
+        if (!Array.isArray(v) || v.length < 3) return null;
+        const nums = v.slice(0, 3).map(n => Math.max(0, Number(n) || 0));
+        const sum = nums.reduce((a, b) => a + b, 0);
+        return sum === 100 ? nums : null;
+      })(),
     },
     players: [],
     rounds: [],

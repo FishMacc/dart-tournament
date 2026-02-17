@@ -113,9 +113,11 @@ function MobileScoringContent({ tournament }) {
         socket.emit('throw_dart', { matchId, value, multiplier }, (res) => {
             if (res.success) {
                 const label = getThrowLabel(value, multiplier);
+                const score = value * multiplier;
+
                 setLastThrow({
                     label,
-                    score: value * multiplier,
+                    score,
                     isBust: res.throwResult.isBust,
                     isFinish: res.throwResult.isFinish,
                 });
@@ -566,6 +568,7 @@ function MobileScoringContent({ tournament }) {
                     {lastThrow.isBust ? '💥 BUST!' : lastThrow.isFinish ? '🎉 FINISH!' : `${lastThrow.label} (${lastThrow.score})`}
                 </div>
             )}
+
         </div>
     );
 }

@@ -124,6 +124,22 @@ export function setupSocket(io) {
                 }
 
                 const result = recordThrow(matchId, value, multiplier);
+
+                // Broadcast explicit throw event for audio/animations
+                io.to(`match-${matchId}`).emit('throw_event', {
+                    matchId,
+                    player: result.match.currentThrower, // actually the one who JUST threw is... wait.
+                    // recordThrow switches the thrower if turn is over. 
+                    // We can just send the raw values.
+                    value,
+                    multiplier,
+                    score: value * multiplier,
+                    isBust: result.throwResult.isBust,
+                    isFinish: result.throwResult.isFinish,
+                    isTurnEnd: result.isTurnEnd,
+                    turnTotal: result.turnTotal
+                });
+
                 io.emit('tournament_update', getSafeTournament(false));
                 io.emit('match_update', sanitizeMatch(result.match));
                 if (callback) callback({ success: true, match: sanitizeMatch(result.match), throwResult: result.throwResult, checkout: result.checkout });

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Zap, Rocket, BookOpen, Trophy, Smartphone, Lock, BarChart, Palette } from 'lucide-react';
+import { Zap, Rocket, BookOpen, Trophy, Smartphone, Lock, BarChart, Palette, Award, TrendingUp } from 'lucide-react';
 
 export default function HomePage() {
     const navigate = useNavigate();
@@ -86,6 +86,16 @@ export default function HomePage() {
                             <p>Wähle aus verschiedenen Themes: Obsidian, Neon oder Classic. Dein Turnier, dein Style.</p>
                         </div>
                         <div className="feature-card">
+                            <span className="feature-icon"><Award size={32} /></span>
+                            <h3>Preispool</h3>
+                            <p>Spiele um echtes Geld mit Entry-Fee und automatischer Gewinnberechnung. Flexible Verteilung: Winner-takes-all, Top-4-Split oder benutzerdefiniert.</p>
+                        </div>
+                        <div className="feature-card">
+                            <span className="feature-icon"><TrendingUp size={32} /></span>
+                            <h3>Statistiken</h3>
+                            <p>Detaillierte Turnierstatistiken: Averages, Best Leg, Highest Finish und Preisgeld — alles auf einen Blick.</p>
+                        </div>
+                        <div className="feature-card">
                             <span className="feature-icon"><Zap size={32} /></span>
                             <h3>Instant Start</h3>
                             <p>Kein Account, kein Cloud — starte sofort. Alles läuft lokal in deinem Netzwerk.</p>
@@ -109,7 +119,8 @@ export default function HomePage() {
                                 <h3>Turnier erstellen</h3>
                                 <p>
                                     Klicke auf „Turnier erstellen" und wähle deinen Spielmodus (301, 501 oder 701),
-                                    die Anzahl der Legs und zusätzliche Einstellungen wie PIN-Schutz oder Double-Out.
+                                    die Anzahl der Legs und zusätzliche Einstellungen wie PIN-Schutz, Double-Out
+                                    oder einen Preispool mit Entry-Fee und Gewinnverteilung.
                                 </p>
                             </div>
                         </div>

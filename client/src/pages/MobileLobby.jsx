@@ -38,6 +38,35 @@ export default function MobileLobby({ tournament }) {
                 <p className="mt-1" style={{ fontSize: '1.3rem', color: 'var(--accent-primary)' }}>
                     Gewinner: <strong>{tournament.winner?.name}</strong>
                 </p>
+                {tournament.settings?.entryFee > 0 && (() => {
+                    const pool = tournament.settings.entryFee * (tournament.players?.length || 0);
+                    const mode = tournament.settings.distributionMode || 'winner_100';
+                    let winnerShare = 1;
+                    let totalShares = 1;
+                    if (mode === 'split_70_30') { winnerShare = 0.7; totalShares = 1; }
+                    else if (mode === 'split_50_30_20') {
+                        winnerShare = 0.5;
+                        // Check if semi-finalists exist
+                        const rounds = [...tournament.rounds].reverse();
+                        const hasSemis = rounds.length > 1 && rounds[1].some(m => m.winner && m.player1 && m.player2);
+                        totalShares = hasSemis ? 1 : 0.8;
+                    } else if (mode === 'custom' && tournament.settings.distributionValues) {
+                        const vals = tournament.settings.distributionValues;
+                        winnerShare = vals[0] / 100;
+                        const rounds = [...tournament.rounds].reverse();
+                        const hasRunner = rounds.length > 0 && rounds[0][0]?.player1 && rounds[0][0]?.player2;
+                        const hasSemis = rounds.length > 1 && rounds[1].some(m => m.winner && m.player1 && m.player2);
+                        totalShares = (winnerShare)
+                            + (hasRunner && vals[1] > 0 ? vals[1] / 100 : 0)
+                            + (hasSemis && vals[2] > 0 ? vals[2] / 100 : 0);
+                    }
+                    const winnerPrize = pool * (winnerShare / totalShares);
+                    return (
+                        <p className="mt-2" style={{ fontSize: '1.1rem', color: '#eab308', fontWeight: 700 }}>
+                            💰 {winnerPrize.toFixed(2)} € gewonnen!
+                        </p>
+                    );
+                })()}
             </div>
         );
     }
@@ -80,6 +109,66 @@ export default function MobileLobby({ tournament }) {
                     {tournament.type} • {tournament.players?.length} Spieler
                     {tournament.name && ` • ${tournament.name}`}
                 </p>
+
+                {/* Prize Pool Display */}
+                {tournament.settings?.entryFee > 0 && (
+                    <div className="mt-2 text-center animate-scale-in">
+                        <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            background: 'rgba(234, 179, 8, 0.1)',
+                            border: '1px solid rgba(234, 179, 8, 0.3)',
+                            borderRadius: 'var(--radius-full)',
+                            padding: '0.3rem 1rem',
+                            color: '#eab308',
+                            fontWeight: 700,
+                            fontSize: '0.9rem',
+                        }}>
+                            <span>💰 Preispool:</span>
+                            <span style={{ fontSize: '1.1rem' }}>
+                                {(tournament.settings.entryFee * (tournament.players?.length || 0)).toFixed(2)} €
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Prize Breakdown */}
+                {tournament.settings?.entryFee > 0 && (
+                    <div className="mt-1 text-muted animate-fade-in" style={{ fontSize: '0.8rem' }}>
+                        {(() => {
+                            const pool = tournament.settings.entryFee * (tournament.players?.length || 0);
+                            const mode = tournament.settings.distributionMode || 'winner_100';
+
+                            if (pool === 0) return null;
+
+                            if (mode === 'winner_100') {
+                                return <span>1.: {pool.toFixed(2)}€</span>;
+                            } else if (mode === 'split_70_30') {
+                                return (
+                                    <span>
+                                        1.: {(pool * 0.7).toFixed(2)}€ • 2.: {(pool * 0.3).toFixed(2)}€
+                                    </span>
+                                );
+                            } else if (mode === 'split_50_30_20') {
+                                return (
+                                    <span>
+                                        1.: {(pool * 0.5).toFixed(2)}€ • 2.: {(pool * 0.3).toFixed(2)}€ • 3./4.: {(pool * 0.2).toFixed(2)}€
+                                    </span>
+                                );
+                            } else if (mode === 'custom' && tournament.settings.distributionValues) {
+                                const vals = tournament.settings.distributionValues;
+                                return (
+                                    <span>
+                                        {vals[0] > 0 && `1.: ${(pool * vals[0] / 100).toFixed(2)}€`}
+                                        {vals[1] > 0 && ` • 2.: ${(pool * vals[1] / 100).toFixed(2)}€`}
+                                        {vals[2] > 0 && ` • 3./4.: ${(pool * vals[2] / 100).toFixed(2)}€`}
+                                    </span>
+                                );
+                            }
+                        })()}
+                    </div>
+                )}
             </div>
 
             {/* Active Matches */}

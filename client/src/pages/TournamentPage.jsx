@@ -16,6 +16,8 @@ export default function TournamentPage({ tournament, hostTournament }) {
     }, []);
 
     const [hidePins, setHidePins] = useState(false);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [matchError, setMatchError] = useState('');
 
     // Confetti on finish
     useEffect(() => {
@@ -43,14 +45,20 @@ export default function TournamentPage({ tournament, hostTournament }) {
     const requiresPin = tournament.settings?.requirePin !== false;
 
     const handleReset = () => {
-        if (confirm('Turnier wirklich zurücksetzen? Alle Daten gehen verloren!')) {
-            socket.emit('reset_tournament');
-        }
+        setShowResetConfirm(true);
+    };
+
+    const confirmReset = () => {
+        socket.emit('reset_tournament');
+        setShowResetConfirm(false);
     };
 
     const handleStartMatch = (matchId) => {
         socket.emit('start_match', { matchId }, (res) => {
-            if (!res.success) alert(res.error);
+            if (!res.success) {
+                setMatchError(res.error);
+                setTimeout(() => setMatchError(''), 3000);
+            }
         });
     };
 
@@ -101,6 +109,26 @@ export default function TournamentPage({ tournament, hostTournament }) {
                         {tournament.settings?.doubleOut ? ' • Double-Out' : ''}
                         {!requiresPin && ' • Ohne PIN'}
                     </p>
+                    {tournament.settings?.entryFee > 0 && (
+                        <div style={{
+                            marginTop: '0.5rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            background: 'rgba(234, 179, 8, 0.1)',
+                            border: '1px solid rgba(234, 179, 8, 0.3)',
+                            borderRadius: 'var(--radius-full)',
+                            padding: '0.2rem 0.75rem',
+                            color: '#eab308',
+                            fontWeight: 700,
+                            fontSize: '0.85rem',
+                        }}>
+                            <span>💰 Preispool:</span>
+                            <span>
+                                {(tournament.settings.entryFee * (tournament.players?.length || 0)).toFixed(2)} €
+                            </span>
+                        </div>
+                    )}
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {requiresPin && (
@@ -228,6 +256,46 @@ export default function TournamentPage({ tournament, hostTournament }) {
             <div className="mt-5">
                 <QRCodeDisplay />
             </div>
+
+            {/* Match Error Toast */}
+            {matchError && (
+                <div style={{
+                    position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+                    background: 'var(--accent-danger)', color: '#fff', padding: '0.75rem 1.5rem',
+                    borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '0.9rem',
+                    zIndex: 300, boxShadow: 'var(--shadow-lg)',
+                }} className="animate-fade-in">
+                    {matchError}
+                </div>
+            )}
+
+            {/* Reset Confirmation Modal */}
+            {showResetConfirm && (
+                <div className="modal-overlay" onClick={() => setShowResetConfirm(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h3 style={{ marginBottom: '0.75rem' }}>Turnier zurücksetzen?</h3>
+                        <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                            Alle Spielergebnisse und der Turnierbaum gehen unwiderruflich verloren.
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                                className="btn btn-ghost"
+                                onClick={() => setShowResetConfirm(false)}
+                                style={{ flex: 1 }}
+                            >
+                                Abbrechen
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={confirmReset}
+                                style={{ flex: 1 }}
+                            >
+                                <Trash2 size={14} /> Zurücksetzen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

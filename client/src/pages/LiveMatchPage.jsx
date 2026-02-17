@@ -28,6 +28,7 @@ export default function LiveMatchPage({ tournament }) {
                 setMatch(updatedMatch);
             }
         };
+
         socket.on('match_update', handleMatchUpdate);
 
         // Join spectator room
@@ -164,6 +165,8 @@ export default function LiveMatchPage({ tournament }) {
                     </div>
                 </div>
             )}
+
+
         </div>
     );
 }

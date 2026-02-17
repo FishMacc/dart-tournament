@@ -16,8 +16,27 @@ export default function SetupPage({ tournament }) {
     const [autoStartMatches, setAutoStartMatches] = useState(false);
     const [shufflePlayers, setShufflePlayers] = useState(true);
     const [tournamentName, setTournamentName] = useState('');
+    const [entryFee, setEntryFee] = useState('');
+    const [distributionMode, setDistributionMode] = useState('winner_100');
+    const [customDist, setCustomDist] = useState([50, 30, 20]);
+    const [enablePrizePool, setEnablePrizePool] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleCreateTournament = () => {
+        if (isLoading) return;
+        if (enablePrizePool && (!entryFee || Number(entryFee) < 0.50)) {
+            setError('Bitte einen Einsatz pro Spieler angeben (min. 0.50 €)');
+            return;
+        }
+        if (enablePrizePool && distributionMode === 'custom') {
+            const sum = customDist.reduce((a, b) => a + b, 0);
+            if (sum !== 100) {
+                setError(`Die Verteilung muss 100% ergeben (Aktuell: ${sum}%)`);
+                return;
+            }
+        }
+
+        setIsLoading(true);
         socket.emit('create_tournament', {
             type: gameType,
             legsToWin: parseInt(legsToWin),
@@ -27,8 +46,12 @@ export default function SetupPage({ tournament }) {
                 doubleOut,
                 autoStartMatches,
                 shufflePlayers,
+                entryFee: enablePrizePool ? (Number(entryFee) || 0) : 0,
+                distributionMode: enablePrizePool ? distributionMode : 'winner_100',
+                distributionValues: (enablePrizePool && distributionMode === 'custom') ? customDist : null,
             }
         }, (res) => {
+            setIsLoading(false);
             if (!res.success) setError(res.error);
             else setError('');
         });
@@ -52,7 +75,10 @@ export default function SetupPage({ tournament }) {
     };
 
     const handleStartTournament = () => {
+        if (isLoading) return;
+        setIsLoading(true);
         socket.emit('start_tournament', {}, (res) => {
+            setIsLoading(false);
             if (res.success) {
                 navigate('/');
             } else {
@@ -133,13 +159,15 @@ export default function SetupPage({ tournament }) {
                             disabled={isTournamentCreated}
                             id="select-legs"
                         >
-                            <option value="1">Best of 1</option>
+                            <option value="1">1 Leg (Single)</option>
                             <option value="2">Best of 3</option>
                             <option value="3">Best of 5</option>
                             <option value="4">Best of 7</option>
                             <option value="5">Best of 9</option>
                         </select>
                     </div>
+
+
 
                     {/* Advanced Settings */}
                     <div className="settings-group">
@@ -208,6 +236,124 @@ export default function SetupPage({ tournament }) {
                                 <span className="toggle-slider"></span>
                             </label>
                         </div>
+
+                        {/* Prize Pool Toggle */}
+                        <div className="setting-row" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '1rem' }}>
+                            <div className="setting-info">
+                                <span className="setting-label">💰 Preispool / Einsatz</span>
+                                <span className="setting-desc">Spiele um Geld (Entry Fee & Gewinne)</span>
+                            </div>
+                            <label className="toggle-switch">
+                                <input
+                                    type="checkbox"
+                                    checked={enablePrizePool}
+                                    onChange={(e) => setEnablePrizePool(e.target.checked)}
+                                    disabled={isTournamentCreated}
+                                />
+                                <span className="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        {/* Money Settings (Conditional, nested) */}
+                        {enablePrizePool && (
+                            <div className="animate-fade-in" style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-muted)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                                {/* Entry Fee */}
+                                <div className="form-group">
+                                    <label className="form-label">Einsatz pro Spieler (€)</label>
+                                    <input
+                                        className="input"
+                                        type="number"
+                                        min="0.50"
+                                        step="0.50"
+                                        placeholder="0.50"
+                                        value={entryFee}
+                                        onChange={(e) => setEntryFee(e.target.value)}
+                                        disabled={isTournamentCreated}
+                                    />
+                                </div>
+
+                                {/* Distribution Mode */}
+                                <div className="form-group">
+                                    <label className="form-label">Gewinnverteilung</label>
+                                    <select
+                                        className="input select"
+                                        value={distributionMode}
+                                        onChange={(e) => setDistributionMode(e.target.value)}
+                                        disabled={isTournamentCreated}
+                                    >
+                                        <option value="winner_100">Alles für den Sieger (100%)</option>
+                                        <option value="split_70_30">Finale Split (70% / 30%)</option>
+                                        <option value="split_50_30_20">Top 4 Split (50% / 30% / 20%)</option>
+                                        <option value="custom">Benutzerdefiniert</option>
+                                    </select>
+                                </div>
+
+                                {/* Custom Distribution Inputs */}
+                                {distributionMode === 'custom' && (
+                                    <div className="form-group animate-fade-in" style={{ marginTop: '-0.5rem', marginLeft: '1rem', borderLeft: '2px solid var(--accent-primary)', paddingLeft: '1rem' }}>
+                                        <label className="form-label" style={{ fontSize: '0.85rem' }}>Verteilung in % (Summe muss 100 ergeben)</label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                                            <div>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>1. Platz</span>
+                                                <input
+                                                    type="number"
+                                                    className="input"
+                                                    min="0"
+                                                    max="100"
+                                                    value={customDist[0]}
+                                                    onChange={(e) => {
+                                                        const newDist = [...customDist];
+                                                        newDist[0] = parseInt(e.target.value) || 0;
+                                                        setCustomDist(newDist);
+                                                    }}
+                                                    disabled={isTournamentCreated}
+                                                />
+                                            </div>
+                                            <div>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>2. Platz</span>
+                                                <input
+                                                    type="number"
+                                                    className="input"
+                                                    min="0"
+                                                    max="100"
+                                                    value={customDist[1]}
+                                                    onChange={(e) => {
+                                                        const newDist = [...customDist];
+                                                        newDist[1] = parseInt(e.target.value) || 0;
+                                                        setCustomDist(newDist);
+                                                    }}
+                                                    disabled={isTournamentCreated}
+                                                />
+                                            </div>
+                                            <div>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>3./4. Platz</span>
+                                                <input
+                                                    type="number"
+                                                    className="input"
+                                                    min="0"
+                                                    max="100"
+                                                    value={customDist[2]}
+                                                    onChange={(e) => {
+                                                        const newDist = [...customDist];
+                                                        newDist[2] = parseInt(e.target.value) || 0;
+                                                        setCustomDist(newDist);
+                                                    }}
+                                                    disabled={isTournamentCreated}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            marginTop: '0.25rem',
+                                            fontSize: '0.8rem',
+                                            color: (customDist[0] + customDist[1] + customDist[2]) === 100 ? 'var(--accent-success)' : 'var(--accent-danger)',
+                                            fontWeight: 700
+                                        }}>
+                                            Summe: {customDist[0] + customDist[1] + customDist[2]}%
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Create Button */}
@@ -215,10 +361,11 @@ export default function SetupPage({ tournament }) {
                         <button
                             className="btn btn-primary btn-lg"
                             onClick={handleCreateTournament}
-                            style={{ width: '100%', marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                            disabled={isLoading}
+                            style={{ width: '100%', marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isLoading ? 0.6 : 1 }}
                             id="btn-create-tournament"
                         >
-                            <Sparkles size={20} /> Turnier erstellen
+                            <Sparkles size={20} /> {isLoading ? 'Wird erstellt...' : 'Turnier erstellen'}
                         </button>
                     )}
 
@@ -295,14 +442,21 @@ export default function SetupPage({ tournament }) {
                                 </div>
                             )}
 
+                            {players.length >= 2 && enablePrizePool && players.length < 4 && (distributionMode === 'split_50_30_20' || (distributionMode === 'custom' && customDist[2] > 0)) && (
+                                <div className="alert-error" style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
+                                    Hinweis: Bei weniger als 4 Spielern gibt es kein Halbfinale — der 3. Platz-Anteil kann nicht vergeben werden.
+                                </div>
+                            )}
+
                             {players.length >= 2 && (
                                 <button
                                     className="btn btn-primary btn-lg"
                                     onClick={handleStartTournament}
-                                    style={{ width: '100%', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                    disabled={isLoading}
+                                    style={{ width: '100%', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isLoading ? 0.6 : 1 }}
                                     id="btn-start-tournament"
                                 >
-                                    <Rocket size={20} /> Turnier starten ({players.length} Spieler)
+                                    <Rocket size={20} /> {isLoading ? 'Wird gestartet...' : `Turnier starten (${players.length} Spieler)`}
                                 </button>
                             )}
 

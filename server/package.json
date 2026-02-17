@@ -3,7 +3,16 @@
   "version": "1.0.0",
   "description": "Dart Tournament Backend Server",
   "main": "src/server.js",
+  "bin": "src/server.js",
   "type": "module",
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ]
+  },
   "scripts": {
     "dev": "node src/server.js",
     "test": "vitest run",

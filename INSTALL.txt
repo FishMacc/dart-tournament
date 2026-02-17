@@ -1,0 +1,37 @@
+Dart Tournament Software
+========================
+
+Requirements:
+-------------
+- Windows PC
+- Node.js installed (LTS version recommended)
+- Network connection (WiFi/LAN) for connecting phones
+
+Installation:
+-------------
+1. No installation required!
+2. Just unzip the folder "DartTournament_v1.0".
+3. Place it anywhere on your computer (e.g., Desktop).
+
+How to Start:
+-------------
+1. Open the folder "DartTournament_v1.0".
+2. Double-click "start.bat".
+3. A black window will appear. Do not close it!
+4. It will show you an address like "http://192.168.1.5:3000".
+
+How to Play:
+------------
+1. On your PC, open Chrome/Edge and go to the address shown.
+2. Set up the tournament (add players, choose 501/301).
+3. On your phone(s), scan the QR code shown on the PC screen.
+4. The phones are now scoring pads!
+
+Troubleshooting:
+----------------
+- If "start.bat" closes immediately: 
+  - Right-click "start.bat" -> Edit. Add "pause" at the end. Run again to see errors.
+  - Make sure Node.js is installed.
+- Phones can't connect?
+  - Ensure PC and phones are on the SAME WiFi.
+  - Check Windows Firewall (allow Node.js).

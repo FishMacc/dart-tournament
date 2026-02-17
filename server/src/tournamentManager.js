@@ -199,14 +199,23 @@ export function recordThrow(matchId, value, multiplier) {
         match.currentThrower = thrower === 'player1' ? 'player2' : 'player1';
         match.currentTurnThrows = 0;
     } else {
-        // Normal throw - check turn limit
-        match.currentTurnThrows++;
+        // Normal throw - update turn count
+        match.currentTurnThrows = turnThrowNumber;
         if (match.currentTurnThrows >= 3) {
             match.currentThrower = thrower === 'player1' ? 'player2' : 'player1';
             match.currentTurnThrows = 0;
         }
     }
 
+    // Compute turnTotal BEFORE state is mutated (use captured thrower + turnThrowNumber)
+    let turnTotal = 0;
+    const isTurnEnd = match.currentTurnThrows === 0 && !result.isFinish;
+    if (!result.isBust && !result.isFinish) {
+        // Sum the current turn's throws for the thrower who just threw
+        const dartCount = isTurnEnd ? 3 : match.currentTurnThrows;
+        const throwerThrows = match.throws[thrower];
+        turnTotal = throwerThrows.slice(-dartCount).reduce((s, t) => s + (t.isBust ? 0 : t.score), 0);
+    }
 
     saveState(currentTournament);
 
@@ -214,6 +223,8 @@ export function recordThrow(matchId, value, multiplier) {
         match,
         throwResult: result,
         checkout: getCheckoutSuggestion(match.scores[match.currentThrower], currentTournament.settings?.doubleOut !== false),
+        turnTotal,
+        isTurnEnd,
     };
 }
 

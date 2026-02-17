@@ -74,7 +74,10 @@ app.get('/api/health', (req, res) => {
 
 // -------- Serve Frontend --------
 import fs from 'fs';
-const clientBuildPath = path.join(__dirname, '../../client/dist');
+// Check for local 'public' folder (production/packaged) first, then dev path
+const localPublicPath = path.join(__dirname, '../public');
+const devClientPath = path.join(__dirname, '../../client/dist');
+const clientBuildPath = fs.existsSync(localPublicPath) ? localPublicPath : devClientPath;
 
 if (fs.existsSync(clientBuildPath)) {
     app.use(express.static(clientBuildPath));

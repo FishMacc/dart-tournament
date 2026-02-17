@@ -9,10 +9,13 @@ import MobileLobby from './pages/MobileLobby.jsx';
 import MobileScoring from './pages/MobileScoring.jsx';
 import LiveMatchPage from './pages/LiveMatchPage.jsx';
 
+
+
 export default function App() {
     const [tournament, setTournament] = useState(null);
     const [hostTournament, setHostTournament] = useState(null);
     const [theme, setTheme] = useState(() => localStorage.getItem('dartvault-theme') || 'obsidian');
+
 
     // Apply theme
     useEffect(() => {

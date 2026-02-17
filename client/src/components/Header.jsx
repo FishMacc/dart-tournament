@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Moon, Zap, Coffee, Activity, Settings, CheckCircle } from 'lucide-react';
+import { Moon, Zap, Coffee, Activity, Settings, CheckCircle, Volume2, VolumeX } from 'lucide-react';
 
 export default function Header({ tournament, theme, setTheme }) {
     const navigate = useNavigate();
@@ -53,6 +53,7 @@ export default function Header({ tournament, theme, setTheme }) {
                 {/* Actions */}
                 <div className="header-actions">
                     <div className="theme-switcher-group">
+
                         <button
                             className={`theme-btn ${theme === 'obsidian' ? 'active' : ''}`}
                             onClick={() => setTheme('obsidian')}

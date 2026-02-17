@@ -59,7 +59,9 @@ export function generateBracket(players, startingScore = 501, settings = {}) {
         throw new Error('At least 2 players are required');
     }
 
-    const shuffled = shuffleArray(players);
+    // Do NOT shuffle here — the caller (tournamentManager.startTournament)
+    // handles shuffling based on the shufflePlayers setting.
+    const shuffled = [...players];
     const bracketSize = nextPowerOf2(shuffled.length);
     const numRounds = totalRounds(bracketSize);
     const numFirstRoundMatches = bracketSize / 2;
@@ -151,13 +153,5 @@ export function advanceWinner(rounds, currentRound, matchIndex, winner) {
     // If both players are now set, mark as waiting
     if (nextMatch.player1 && nextMatch.player2) {
         nextMatch.status = 'waiting';
-    }
-
-    // Reset scores for the next match
-    if (nextMatch.player1) {
-        nextMatch.scores.player1 = nextMatch.scores.player1; // Keep starting score
-    }
-    if (nextMatch.player2) {
-        nextMatch.scores.player2 = nextMatch.scores.player2;
     }
 }

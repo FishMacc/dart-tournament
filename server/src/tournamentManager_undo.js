@@ -13,6 +13,21 @@ export function undoLastThrow(matchId) {
 
     // Case 1: Match is finished -> Revert to active
     if (match.status === 'finished') {
+        // Un-advance winner from the next round bracket slot
+        const nextRound = match.round + 1;
+        if (nextRound < currentTournament.rounds.length) {
+            const nextMatchIndex = Math.floor(match.matchIndex / 2);
+            const nextMatch = currentTournament.rounds[nextRound][nextMatchIndex];
+            if (nextMatch && nextMatch.status !== 'active' && nextMatch.status !== 'finished') {
+                if (match.matchIndex % 2 === 0) {
+                    nextMatch.player1 = null;
+                } else {
+                    nextMatch.player2 = null;
+                }
+                nextMatch.status = 'scheduled';
+            }
+        }
+
         match.status = 'active';
         match.winner = null;
         if (currentTournament.status === 'finished') {

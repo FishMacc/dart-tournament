@@ -33,18 +33,22 @@ export default function StatsBoard({ tournament }) {
                     if (!d.isBust) scoresSum += d.score;
                 });
 
-                // Check for 180s (3 darts, same turn, all 60)
+                // Check for 180s (3 darts, same turn, all T20=60)
                 let currentTurnScores = [];
-                let currentTurnNum = -1;
 
                 legDarts.forEach(d => {
-                    if (d.turnThrowNumber <= currentTurnNum) {
-                        // New turn started, verify previous
+                    if (d.isBust) {
+                        // Bust invalidates the turn — discard accumulated scores
+                        currentTurnScores = [];
+                        return;
+                    }
+                    // turnThrowNumber resets to 1 at each new turn
+                    if (d.turnThrowNumber === 1 && currentTurnScores.length > 0) {
+                        // Previous turn ended, check if it was a 180
                         if (currentTurnScores.length === 3 && currentTurnScores.every(s => s === 60)) sum180s++;
                         currentTurnScores = [];
                     }
-                    currentTurnNum = d.turnThrowNumber; // 1, 2, 3
-                    if (!d.isBust) currentTurnScores.push(d.score);
+                    currentTurnScores.push(d.score);
                 });
                 // Check last turn
                 if (currentTurnScores.length === 3 && currentTurnScores.every(s => s === 60)) sum180s++;
@@ -132,6 +136,78 @@ export default function StatsBoard({ tournament }) {
             isHighFin: p.highFinish === maxHighFin && maxHighFin > 0,
         }));
 
+    }, [tournament]);
+
+    // Calculate Payouts
+    const payoutMap = useMemo(() => {
+        if (!tournament || !tournament.settings?.entryFee || !tournament.winner) return {};
+
+        const pool = tournament.settings.entryFee * (tournament.players?.length || 0);
+        const mode = tournament.settings.distributionMode || 'winner_100';
+        const payouts = {};
+
+        // Find ranks based on elimination round
+        // Winner is known. Runner-up is the loser of the final match.
+        // 3rd place are losers of semi-finals.
+
+        let winnerId = tournament.winner.id;
+        let runnerUpId = null;
+        let semiLoserIds = [];
+
+        // Reverse rounds to find Final, Semi-Final
+        const rounds = [...tournament.rounds].reverse(); // Last round is final
+
+        // Final Round
+        if (rounds.length > 0) {
+            const finalMatch = rounds[0][0]; // Assuming single final match
+            if (finalMatch && finalMatch.player1 && finalMatch.player2) {
+                runnerUpId = finalMatch.player1.id === winnerId ? finalMatch.player2.id : finalMatch.player1.id;
+            }
+        }
+
+        // Semi-Final Round
+        if (rounds.length > 1) {
+            const semiMatches = rounds[1];
+            semiMatches.forEach(m => {
+                // The losers here are 3rd place shared
+                if (m.winner && m.player1 && m.player2) {
+                    const loserId = m.player1.id === m.winner.id ? m.player2.id : m.player1.id;
+                    semiLoserIds.push(loserId);
+                }
+            });
+        }
+
+        if (mode === 'winner_100') {
+            payouts[winnerId] = pool;
+        } else if (mode === 'split_70_30') {
+            payouts[winnerId] = pool * 0.7;
+            if (runnerUpId) payouts[runnerUpId] = pool * 0.3;
+        } else if (mode === 'split_50_30_20') {
+            payouts[winnerId] = pool * 0.5;
+            if (runnerUpId) payouts[runnerUpId] = pool * 0.3;
+            if (semiLoserIds.length > 0) {
+                const thirdShare = (pool * 0.2) / semiLoserIds.length;
+                semiLoserIds.forEach(id => payouts[id] = thirdShare);
+            }
+        } else if (mode === 'custom' && tournament.settings.distributionValues) {
+            const vals = tournament.settings.distributionValues;
+            if (vals[0] > 0) payouts[winnerId] = pool * (vals[0] / 100);
+            if (vals[1] > 0 && runnerUpId) payouts[runnerUpId] = pool * (vals[1] / 100);
+            if (vals[2] > 0 && semiLoserIds.length > 0) {
+                const thirdShare = (pool * (vals[2] / 100)) / semiLoserIds.length;
+                semiLoserIds.forEach(id => payouts[id] = thirdShare);
+            }
+        }
+
+        // Redistribute unclaimed shares proportionally when positions are unfilled
+        // (e.g. no semi-finalists in a 2-player tournament with split_50_30_20)
+        const totalPaid = Object.values(payouts).reduce((sum, v) => sum + v, 0);
+        if (totalPaid > 0 && totalPaid < pool) {
+            const scale = pool / totalPaid;
+            Object.keys(payouts).forEach(id => { payouts[id] *= scale; });
+        }
+
+        return payouts;
     }, [tournament]);
 
     const sortedStats = useMemo(() => {
@@ -236,6 +312,7 @@ export default function StatsBoard({ tournament }) {
                                     Hi-Fin <SortIcon field="highFinish" />
                                 </div>
                             </th>
+                            {tournament.settings?.entryFee > 0 && <th style={{ textAlign: 'center' }}>Preisgeld</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -262,10 +339,15 @@ export default function StatsBoard({ tournament }) {
                                 </td>
 
                                 {/* High Finish */}
-                                <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)', borderRadius: '0 8px 8px 0' }}>
+                                <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)', borderRadius: tournament.settings?.entryFee > 0 ? '0' : '0 8px 8px 0' }}>
                                     {player.highFinish}
                                     {player.isHighFin && <ArrowUpCircle size={14} className="text-accent" style={{ marginLeft: '0.25rem', verticalAlign: 'middle' }} />}
                                 </td>
+                                {tournament.settings?.entryFee > 0 && (
+                                    <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)', borderRadius: '0 8px 8px 0', fontWeight: 700, color: '#eab308' }}>
+                                        {payoutMap[player.id] ? `${payoutMap[player.id].toFixed(2)}€` : '-'}
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>

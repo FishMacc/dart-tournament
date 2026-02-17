@@ -5,3 +5,7 @@ build/
 *.log
 .DS_Store
 coverage/
+*_results.txt
+*_results.json
+*_out.txt
+server/data/
