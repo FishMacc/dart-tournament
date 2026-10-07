@@ -94,8 +94,8 @@ describe('🛡️ DARTVAULT ULTIMATE TEST SUITE', () => {
             const res = recordThrow(matchId, 20, 3);
 
             expect(res.throwResult.isBust).toBe(true);
-            // Bust resets to pre-throw remaining score (61, not pre-turn 121)
-            expect(res.match.scores.player1).toBe(61);
+            // Bust voids the whole turn: back to the score before the turn (121)
+            expect(res.match.scores.player1).toBe(121);
             expect(res.match.currentThrower).toBe('player2');
         });
 

@@ -93,12 +93,9 @@ export function startTournament() {
     currentTournament.status = 'active';
 
     // Auto start first round matches if setting is enabled
+    // Includes round-2 matches that are already complete because of byes
     if (currentTournament.settings.autoStartMatches) {
-        for (const match of currentTournament.rounds[0]) {
-            if (match.status === 'waiting') {
-                match.status = 'active';
-            }
-        }
+        autoStartNextMatches();
     }
 
     saveState(currentTournament);
@@ -137,19 +134,26 @@ export function recordThrow(matchId, value, multiplier) {
 
     const result = processThrow(remainingScore, value, multiplier, doubleOut);
 
-    // Record the throw
-    const turnThrowNumber = (match.currentTurnThrows || 0) + 1;
+    const previousTurnDarts = match.currentTurnThrows || 0;
+    const turnThrowNumber = previousTurnDarts + 1;
+    const turnStartScore = remainingScore + match.throws[thrower]
+        .slice(match.throws[thrower].length - previousTurnDarts)
+        .reduce((sum, t) => sum + (t.isBust ? 0 : t.score), 0);
+
+    match.throwSeq = (match.throwSeq || 0) + 1;
     match.throws[thrower].push({
         value,
         multiplier,
         score: value * multiplier,
         isBust: result.isBust,
         turnThrowNumber: turnThrowNumber,
+        scoreBefore: remainingScore,
+        seq: match.throwSeq,
         timestamp: Date.now(),
     });
 
-    // Update score
-    match.scores[thrower] = result.newScore;
+    // A bust voids the whole turn: score goes back to what it was before the turn
+    match.scores[thrower] = result.isBust ? turnStartScore : result.newScore;
 
     if (result.isFinish) {
         // Player won this leg
@@ -163,7 +167,7 @@ export function recordThrow(matchId, value, multiplier) {
                 player2: [...match.throws.player2]
             },
             winner: thrower,
-            starter: match.currentThrower
+            starter: match.legStarter || 'player1',
         });
 
         if (match.legs[thrower] >= currentTournament.legsToWin) {
@@ -192,6 +196,7 @@ export function recordThrow(matchId, value, multiplier) {
 
             // Loser starts next leg
             match.currentThrower = thrower === 'player1' ? 'player2' : 'player1';
+            match.legStarter = match.currentThrower;
             match.currentTurnThrows = 0;
         }
     } else if (result.isBust) {

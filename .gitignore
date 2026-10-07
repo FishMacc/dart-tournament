@@ -9,3 +9,8 @@ coverage/
 *_results.json
 *_out.txt
 server/data/
+
+# Generated (built by `npm start` / `npm run release`)
+server/public/
+client/test-results/
+client/playwright-report/

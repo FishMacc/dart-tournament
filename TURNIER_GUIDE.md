@@ -1,74 +1,58 @@
-# 🎯 DartVault - Turnier-Leitfaden für Dienstag
+# 🎯 DartVault – Leitfaden für den Turniertag
 
-Herzlichen Glückwunsch! Deine Software ist bereit für das Turnier am Dienstag. Hier ist alles, was du wissen musst.
+## 🏠 1. Vorbereitung (zuhause, mit Internet)
 
----
-
-## 🏠 1. Vorbereitung (Zuhause / Jetzt)
-
-Damit am Dienstag alles stabil und schnell läuft, erstellen wir eine "Produktions-Version". Das macht die App schneller und unabhänig vom Internet.
-
-1.  Öffne ein Terminal im Projektordner.
-2.  Gehe in den Client-Ordner: `cd client`
-3.  Führe den Build-Befehl aus: `npm run build`
-    - Warte, bis der Prozess fertig ist (es sollte "Build complete" oder ähnliches stehen).
-    - Es entsteht ein Ordner `client/dist`. Das ist deine fertige App!
+1. [Node.js](https://nodejs.org) (LTS) installieren.
+2. Einmal starten: `Start-Windows.bat` bzw. `Start-Mac-Linux.command` doppelklicken (oder `npm install && npm start`).
+   Dabei werden Abhängigkeiten installiert und die App gebaut. Danach läuft alles **ohne Internet**.
+3. Kurz ein Test-Turnier mit 2 Spielern und einem Handy durchspielen, dann **Turnier zurücksetzen**.
 
 ---
 
-## 🏟️ 2. Am Turniertag (Vor Ort)
+## 🏟️ 2. Am Turniertag
 
 ### A. Geräte & Aufbau
-*   **1 Laptop**: Das ist der "Server" & "Host". Er zeigt den **Beamer/TV** (Turnierbaum & Live-View).
-*   **Tablets/Handys**: Zum Eingeben der Punkte (Scoring).
-*   **WLAN**: **WICHTIG!** Alle Geräte (Laptop & Handys) müssen im **GLEICHEN WLAN** sein.
-    *   *Tipp:* Wenn kein WLAN da ist, mach mit deinem Handy einen Hotspot auf und verbinde den Laptop damit.
+* **1 Laptop**: Server & Host. Zeigt Turnierbaum und Live-Scores am **Beamer/TV**.
+* **Handys/Tablets**: Zum Eintragen der Punkte.
+* **WLAN**: Alle Geräte im **gleichen WLAN**.
+  *Tipp:* Kein WLAN vor Ort? Handy-Hotspot aufmachen und den Laptop damit verbinden.
 
-### B. Software Starten
-1.  Am Laptop: Öffne ein Terminal im Projektordner.
-2.  Starte den Server:
-    ```bash
-    cd server
-    node src/server.js
-    ```
-    *(Hinweis: Du brauchst KEIN `npm run dev` mehr im Client! Der Server liefert jetzt alles aus.)*
+### B. Software starten
+1. Starter doppelklicken. Im Fenster erscheint:
+   ```
+   Host (dieser PC):  http://localhost:3000
+   Handys (Scoring):  http://192.168.1.5:3000/mobile
+   Admin von anderem Gerät: http://192.168.1.5:3000/?admin=1a2b3c4d
+   ```
+2. Der Browser öffnet sich automatisch. Fenster offen lassen!
 
-3.  Im Terminal erscheint eine Meldung wie:
-    ```
-    🎯 DART TOURNAMENT SERVER
-       Local:   http://localhost:3000
-       LAN:     http://192.168.1.5:3000  <-- DAS IST WICHTIG!
-    ```
+### C. Turnier
+1. **Am Laptop:** Turnier erstellen (Modus, Legs, PIN-Schutz …), Spieler eintragen, starten.
+2. **Handys:** QR-Code auf dem Turnier-Bildschirm scannen (oder die Handy-Adresse eintippen).
+3. Spiel antippen → **PIN** vom Laptop-Bildschirm eingeben → **Spiel starten** → Würfe eintragen.
+   Verbindungsabbruch? Kein Problem, das Handy meldet sich mit der PIN automatisch wieder an.
+4. Falsch getippt? **Rückgängig** auf dem Handy. (Nicht mehr möglich, wenn der Sieger schon sein nächstes Spiel begonnen hat.)
 
-### C. Verbinden
-1.  **Am Laptop (Host):** Öffne den Browser und gehe auf `http://localhost:3000`.
-    - Das ist deine Admin-Ansicht. Klicke auf "Setup", erstelle das Turnier.
-    - Wenn das Turnier läuft, schließe den Laptop an den TV/Beamer an.
-
-2.  **An den Tablets (Scoring):**
-    - Öffne den Browser (Chrome/Safari).
-    - Gib die **LAN-Adresse** vom Terminal ein (z.B. `http://192.168.1.5:3000/mobile`).
-    - *Oder noch einfacher:* Am Laptop im Menü auf **"Mobile QR Code"** klicken (falls vorhanden) oder einfach die URL abtippen.
+Nur der Laptop sieht die PINs und kann das Turnier ändern. Soll ein zweites Gerät (z.B. Tablet an der Theke) auch Admin sein, dort den **Admin-Link** aus dem Fenster öffnen.
 
 ---
 
-## ⚠️ 3. Checkliste für Dienstag
+## ⚠️ 3. Checkliste
 
-- [ ] **Strom:** Ladekabel für Laptop dabei?
-- [ ] **WLAN:** Kennwort bekannt oder Hotspot bereit?
-- [ ] **Browser:** Chrome oder Safari auf den Tablets installiert? (Funktioniert am besten).
-- [ ] **Standby:** Schalte den "Schlafmodus" auf den Tablets aus, damit sie anbleiben.
+- [ ] Ladekabel für den Laptop
+- [ ] WLAN-Kennwort oder Hotspot bereit
+- [ ] Schlafmodus/Bildschirmsperre an Laptop und Tablets deaktiviert
+- [ ] Vorab einmal gestartet (siehe Vorbereitung)
 
 ---
 
-## 🆘 Troubleshooting (Wenn was nicht geht)
+## 🆘 Troubleshooting
 
-*   **Handys finden die Seite nicht?**
-    *   Prüfe: Sind alle im *selben* WLAN? (Gast-WLANs blockieren oft Verbindungen untereinander!)
-    *   Firewall am Laptop: Wenn Windows fragt "Zugriff zulassen?", unbedingt **JA** (für Private Netzwerke) klicken.
-*   **App hängt?**
-    *   Einfach Browser neu laden (F5 am Laptop, Swipe-Down am Tablet). Die Daten sind sicher gespeichert.
-*   **Server abgestürzt?**
-    *   Terminal schließen, neu öffnen, `node src/server.js` starten. Der Turnierstand bleibt erhalten (solange der Prozess nicht gekillt wurde - *Hinweis an Entwickler: Persistenz ist im RAM, also Vorsicht beim Neustart!*)
+* **Handys finden die Seite nicht?**
+  * Alle im *selben* WLAN? Gast-WLANs blockieren Verbindungen zwischen Geräten.
+  * Windows fragt "Zugriff zulassen?" → **Ja** (für private Netzwerke).
+  * QR-Code zeigt eine komische Adresse (VPN, virtuelle Netzwerkkarte)? VPN trennen oder IP erzwingen: `set HOST_IP=192.168.1.5` (Windows) bzw. `HOST_IP=192.168.1.5 npm start`.
+* **App hängt?** Browser neu laden. Die Daten liegen auf dem Server.
+* **Server abgestürzt / Laptop neu gestartet?** Einfach wieder starten – der Turnierstand wird nach jedem Wurf gespeichert (`server/data/`) und automatisch geladen.
 
-**Viel Erfolg und "Good Darts"!** 🎯
+**Viel Erfolg und Good Darts!** 🎯

@@ -25,13 +25,17 @@ export default function StatsBoard({ tournament }) {
                 const legDarts = darts || [];
                 if (legDarts.length === 0) return;
 
-                // For Average: Count all valid throws
-                // NOTE: Simply summing non-bust scores. 
-                // Strict rules (bust forfeits whole turn score) would require turn-by-turn replay.
+                // For Average: a bust forfeits the whole turn's score
+                let turnScore = 0;
                 legDarts.forEach(d => {
                     dartsThrown++;
-                    if (!d.isBust) scoresSum += d.score;
+                    if (d.turnThrowNumber === 1 || d.turnThrowNumber === undefined) {
+                        scoresSum += turnScore;
+                        turnScore = 0;
+                    }
+                    turnScore = d.isBust ? 0 : turnScore + d.score;
                 });
+                scoresSum += turnScore;
 
                 // Check for 180s (3 darts, same turn, all T20=60)
                 let currentTurnScores = [];

@@ -18,7 +18,10 @@ import {
 } from './tournamentManager.js';
 import { undoLastThrow } from './tournamentManager_undo.js';
 import { getCheckoutSuggestion } from './gameLogic.js';
+import { isHostHandshake } from './hostAuth.js';
 
+const NOT_HOST = 'Nur der Turnier-Host darf das tun.';
+const NOT_AUTHORIZED = 'Nicht autorisiert! Bitte PIN eingeben.';
 
 /**
  * Setup Socket.io event handlers.
@@ -26,190 +29,157 @@ import { getCheckoutSuggestion } from './gameLogic.js';
  */
 export function setupSocket(io) {
     io.on('connection', (socket) => {
-        console.log(`Client connected: ${socket.id}`);
+        const isHost = isHostHandshake(socket.handshake);
+        socket.data.isHost = isHost;
+        console.log(`Client connected: ${socket.id}${isHost ? ' (host)' : ''}`);
 
-        // Send current tournament state on connect (without PINs)
+        socket.emit('session_info', { isHost });
         const safeTournament = getSafeTournament(false);
         if (safeTournament) {
             socket.emit('tournament_update', safeTournament);
         }
 
-        // ---------- Tournament Setup ----------
+        const canPlay = (matchId) => isHost || isSocketAuthorized(matchId, socket.id);
 
-        socket.on('create_tournament', ({ type, legsToWin, settings }, callback) => {
-            try {
-                initTournament(type, legsToWin, settings || {});
-                io.emit('tournament_update', getSafeTournament(false));
-                if (callback) callback({ success: true, tournament: getSafeTournament(false) });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
+        /**
+         * Register a handler with a safe payload, an optional ack callback,
+         * error handling and an optional host-only guard.
+         */
+        const on = (event, handler, { hostOnly = false } = {}) => {
+            socket.on(event, (...args) => {
+                const callback = typeof args[args.length - 1] === 'function' ? args.pop() : () => { };
+                const payload = args[0] && typeof args[0] === 'object' ? args[0] : {};
+                if (hostOnly && !isHost) {
+                    callback({ success: false, error: NOT_HOST });
+                    return;
+                }
+                try {
+                    handler(payload, callback);
+                } catch (err) {
+                    callback({ success: false, error: err.message });
+                }
+            });
+        };
+
+        const broadcastTournament = () => {
+            io.emit('tournament_update', getSafeTournament(false));
+            for (const s of io.sockets.sockets.values()) {
+                if (s.data.isHost) s.emit('tournament_update_host', getSafeTournament(true));
             }
-        });
+        };
 
-        socket.on('add_player', ({ name }, callback) => {
-            try {
-                const player = addPlayer(name);
-                io.emit('tournament_update', getSafeTournament(false));
-                if (callback) callback({ success: true, player });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
-            }
-        });
+        // ---------- Tournament Setup (host) ----------
 
-        socket.on('remove_player', ({ playerId }, callback) => {
-            try {
-                removePlayer(playerId);
-                io.emit('tournament_update', getSafeTournament(false));
-                if (callback) callback({ success: true });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
-            }
-        });
+        on('create_tournament', ({ type, legsToWin, settings }, callback) => {
+            initTournament(type, legsToWin, settings || {});
+            broadcastTournament();
+            callback({ success: true, tournament: getSafeTournament(false) });
+        }, { hostOnly: true });
 
-        socket.on('start_tournament', (_, callback) => {
-            try {
-                startTournament();
-                // Send WITH PINs to the host that started it
-                socket.emit('tournament_update_host', getSafeTournament(true));
-                // Send WITHOUT PINs to everyone else
-                io.emit('tournament_update', getSafeTournament(false));
-                if (callback) callback({ success: true, tournament: getSafeTournament(true) });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
-            }
-        });
+        on('add_player', ({ name }, callback) => {
+            const player = addPlayer(typeof name === 'string' ? name : '');
+            broadcastTournament();
+            callback({ success: true, player });
+        }, { hostOnly: true });
 
-        // ---------- Host: Request PINs ----------
+        on('remove_player', ({ playerId }, callback) => {
+            removePlayer(playerId);
+            broadcastTournament();
+            callback({ success: true });
+        }, { hostOnly: true });
 
-        socket.on('request_host_view', (_, callback) => {
-            try {
-                const hostTournament = getSafeTournament(true);
-                socket.emit('tournament_update_host', hostTournament);
-                if (callback) callback({ success: true, tournament: hostTournament });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
-            }
-        });
+        on('start_tournament', (_, callback) => {
+            startTournament();
+            broadcastTournament();
+            callback({ success: true, tournament: getSafeTournament(true) });
+        }, { hostOnly: true });
+
+        on('request_host_view', (_, callback) => {
+            const hostTournament = getSafeTournament(true);
+            socket.emit('tournament_update_host', hostTournament);
+            callback({ success: true, tournament: hostTournament });
+        }, { hostOnly: true });
+
+        on('reset_tournament', (_, callback) => {
+            resetTournament();
+            io.emit('tournament_update', null);
+            callback({ success: true });
+        }, { hostOnly: true });
 
         // ---------- PIN Verification ----------
 
-        socket.on('verify_pin', ({ matchId, pin }, callback) => {
-            try {
-                const valid = verifyMatchPin(matchId, pin, socket.id);
-                if (callback) callback({ success: true, authorized: valid });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
-            }
+        on('verify_pin', ({ matchId, pin }, callback) => {
+            const valid = verifyMatchPin(matchId, String(pin ?? ''), socket.id);
+            callback({ success: true, authorized: valid });
         });
 
-        // ---------- Match Play ----------
+        // ---------- Match Play (host or PIN-authorized device) ----------
 
-        socket.on('start_match', ({ matchId }, callback) => {
-            try {
-                const match = startMatch(matchId);
-                io.emit('tournament_update', getSafeTournament(false));
-                io.emit('match_update', sanitizeMatch(match));
-                if (callback) callback({ success: true, match: sanitizeMatch(match) });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
+        on('start_match', ({ matchId }, callback) => {
+            if (!canPlay(matchId)) {
+                callback({ success: false, code: 'UNAUTHORIZED', error: NOT_AUTHORIZED });
+                return;
             }
+            const match = startMatch(matchId);
+            broadcastTournament();
+            io.emit('match_update', sanitizeMatch(match));
+            callback({ success: true, match: sanitizeMatch(match) });
         });
 
-        socket.on('throw_dart', ({ matchId, value, multiplier }, callback) => {
-            try {
-                // Check PIN authorization
-                if (!isSocketAuthorized(matchId, socket.id)) {
-                    if (callback) callback({ success: false, error: 'Nicht autorisiert! Bitte PIN eingeben.' });
-                    return;
-                }
-
-                const result = recordThrow(matchId, value, multiplier);
-
-                // Broadcast explicit throw event for audio/animations
-                io.to(`match-${matchId}`).emit('throw_event', {
-                    matchId,
-                    player: result.match.currentThrower, // actually the one who JUST threw is... wait.
-                    // recordThrow switches the thrower if turn is over. 
-                    // We can just send the raw values.
-                    value,
-                    multiplier,
-                    score: value * multiplier,
-                    isBust: result.throwResult.isBust,
-                    isFinish: result.throwResult.isFinish,
-                    isTurnEnd: result.isTurnEnd,
-                    turnTotal: result.turnTotal
-                });
-
-                io.emit('tournament_update', getSafeTournament(false));
-                io.emit('match_update', sanitizeMatch(result.match));
-                if (callback) callback({ success: true, match: sanitizeMatch(result.match), throwResult: result.throwResult, checkout: result.checkout });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
+        on('throw_dart', ({ matchId, value, multiplier }, callback) => {
+            if (!canPlay(matchId)) {
+                callback({ success: false, code: 'UNAUTHORIZED', error: NOT_AUTHORIZED });
+                return;
             }
+
+            const result = recordThrow(matchId, value, multiplier);
+
+            io.to(`match-${matchId}`).emit('throw_event', {
+                matchId,
+                value,
+                multiplier,
+                score: value * multiplier,
+                isBust: result.throwResult.isBust,
+                isFinish: result.throwResult.isFinish,
+                isTurnEnd: result.isTurnEnd,
+                turnTotal: result.turnTotal,
+            });
+
+            broadcastTournament();
+            io.emit('match_update', sanitizeMatch(result.match));
+            callback({ success: true, match: sanitizeMatch(result.match), throwResult: result.throwResult, checkout: result.checkout });
         });
 
-        socket.on('undo_throw', ({ matchId }, callback) => {
-            try {
-                // Check PIN authorization
-                if (!isSocketAuthorized(matchId, socket.id)) {
-                    if (callback) callback({ success: false, error: 'Nicht autorisiert!' });
-                    return;
-                }
-
-                const match = undoLastThrow(matchId);
-                triggerSave();
-
-                // Calculate/Update checkout suggestion
-                const tournament = getTournament();
-                const doubleOut = tournament?.settings?.doubleOut !== false;
-                const currentScore = match.scores[match.currentThrower];
-                const checkout = getCheckoutSuggestion(currentScore, doubleOut);
-
-                io.emit('tournament_update', getSafeTournament(false));
-                io.emit('match_update', sanitizeMatch(match));
-                if (callback) callback({ success: true, match: sanitizeMatch(match), checkout });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
+        on('undo_throw', ({ matchId }, callback) => {
+            if (!canPlay(matchId)) {
+                callback({ success: false, code: 'UNAUTHORIZED', error: NOT_AUTHORIZED });
+                return;
             }
+
+            const match = undoLastThrow(matchId);
+            triggerSave();
+
+            const doubleOut = getTournament()?.settings?.doubleOut !== false;
+            const checkout = getCheckoutSuggestion(match.scores[match.currentThrower], doubleOut);
+
+            broadcastTournament();
+            io.emit('match_update', sanitizeMatch(match));
+            callback({ success: true, match: sanitizeMatch(match), checkout });
         });
 
-        socket.on('get_playable_matches', (_, callback) => {
-
-            try {
-                const matches = getPlayableMatches().map(sanitizeMatch);
-                if (callback) callback({ success: true, matches });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
-            }
+        on('get_playable_matches', (_, callback) => {
+            callback({ success: true, matches: getPlayableMatches().map(sanitizeMatch) });
         });
 
         // ---------- Spectator ----------
 
-        socket.on('spectate_match', ({ matchId }, callback) => {
-            try {
-                const tournament = getTournament();
-                if (!tournament) {
-                    if (callback) callback({ success: false, error: 'No tournament' });
-                    return;
-                }
-                // Join a room for this match to receive updates
-                socket.join(`match-${matchId}`);
-                if (callback) callback({ success: true });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
+        on('spectate_match', ({ matchId }, callback) => {
+            if (!getTournament()) {
+                callback({ success: false, error: 'No tournament' });
+                return;
             }
-        });
-
-        // ---------- Admin ----------
-
-        socket.on('reset_tournament', (_, callback) => {
-            try {
-                resetTournament();
-                io.emit('tournament_update', null);
-                if (callback) callback({ success: true });
-            } catch (err) {
-                if (callback) callback({ success: false, error: err.message });
-            }
+            socket.join(`match-${matchId}`);
+            callback({ success: true });
         });
 
         socket.on('disconnect', () => {

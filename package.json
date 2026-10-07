@@ -2,20 +2,21 @@
     "name": "dart-tournament",
     "version": "1.0.0",
     "private": true,
-    "description": "Local LAN Dart Tournament Software",
+    "description": "Local LAN dart tournament software - host on a PC, score on phones",
     "scripts": {
-        "dev": "npx concurrently \"npm run dev:server\" \"npm run dev:client\"",
-        "dev:server": "cd server && npm run dev",
-        "dev:client": "cd client && npm run dev",
-        "test": "cd server && npm test",
-        "test:all": "cd server && npm test && cd ../client && npm test",
-        "build": "cd client && npm run build",
-        "install:all": "cd server && npm install && cd ../client && npm install"
+        "postinstall": "npm install --prefix server && npm install --prefix client",
+        "start": "node scripts/start.mjs",
+        "dev": "concurrently -n server,client -c blue,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+        "build": "npm run build --prefix client",
+        "test": "npm test --prefix server",
+        "test:all": "npm test --prefix server && npm test --prefix client",
+        "release": "node scripts/build-release.mjs",
+        "install:all": "npm install --prefix server && npm install --prefix client"
     },
     "devDependencies": {
         "concurrently": "^8.2.2"
     },
-    "dependencies": {
-        "socket.io-client": "^4.8.3"
+    "engines": {
+        "node": ">=18"
     }
 }

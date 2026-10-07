@@ -120,10 +120,10 @@ describe('getCheckoutSuggestion', () => {
         expect(getCheckoutSuggestion(0)).toBeNull();
     });
 
-    it('should return null for scores with no entry (e.g. 37, 35, 33)', () => {
-        expect(getCheckoutSuggestion(37)).toBeNull();
-        expect(getCheckoutSuggestion(35)).toBeNull();
-        expect(getCheckoutSuggestion(33)).toBeNull();
+    it('should suggest setup + double for odd scores (e.g. 37, 35, 33)', () => {
+        expect(getCheckoutSuggestion(37)).toBe('S5 D16');
+        expect(getCheckoutSuggestion(35)).toBe('S3 D16');
+        expect(getCheckoutSuggestion(33)).toBe('S1 D16');
     });
 
     it('should return checkout for bullseye finish (50)', () => {

@@ -44,7 +44,7 @@ export default function MobileScoring(props) {
     );
 }
 
-function MobileScoringContent({ tournament }) {
+function MobileScoringContent({ tournament, isHost }) {
     const { matchId } = useParams();
     const navigate = useNavigate();
 
@@ -83,29 +83,51 @@ function MobileScoringContent({ tournament }) {
         return () => socket.off('match_update', handleMatchUpdate);
     }, [matchId]);
 
-    // Auto-authorize if PIN not required
+    const requiresPin = tournament?.settings?.requirePin !== false;
+    const pinStorageKey = `dart-pin-${matchId}`;
+
+    // (Re-)authorize on load and after every reconnect: the server only knows
+    // socket ids, so a reconnected phone has to present its PIN again.
     useEffect(() => {
-        if (!match) return;
-        if (tournament?.settings?.requirePin === false) {
-            // No PIN required — try to auto-authorize
-            socket.emit('verify_pin', { matchId, pin: '' }, (res) => {
+        if (!tournament) return;
+        const authorize = () => {
+            if (isHost) {
+                setAuthorized(true);
+                return;
+            }
+            const pin = requiresPin ? sessionStorage.getItem(pinStorageKey) : '';
+            if (pin === null) return;
+            socket.emit('verify_pin', { matchId, pin }, (res) => {
                 if (res.success && res.authorized) {
                     setAuthorized(true);
+                } else {
+                    sessionStorage.removeItem(pinStorageKey);
+                    setAuthorized(false);
                 }
             });
-        }
-    }, [match, tournament, matchId]);
+        };
+        authorize();
+        socket.on('connect', authorize);
+        return () => socket.off('connect', authorize);
+    }, [matchId, requiresPin, isHost, pinStorageKey, !!tournament]);
 
     const handlePinSubmit = (e) => {
         e.preventDefault();
         socket.emit('verify_pin', { matchId, pin: pinInput }, (res) => {
             if (res.success && res.authorized) {
+                sessionStorage.setItem(pinStorageKey, pinInput);
                 setAuthorized(true);
                 setPinError('');
             } else {
                 setPinError('Falscher PIN! Bitte erneut versuchen.');
                 setPinInput('');
             }
+        });
+    };
+
+    const handleStartMatch = () => {
+        socket.emit('start_match', { matchId }, (res) => {
+            if (!res.success) setPinError(res.error);
         });
     };
 
@@ -122,9 +144,12 @@ function MobileScoringContent({ tournament }) {
                     isFinish: res.throwResult.isFinish,
                 });
                 setCheckout(res.checkout);
-            } else if (res.error) {
+            } else if (res.code === 'UNAUTHORIZED') {
+                sessionStorage.removeItem(pinStorageKey);
                 setPinError(res.error);
                 setAuthorized(false);
+            } else if (res.error) {
+                alert(res.error);
             }
         });
     };
@@ -161,8 +186,6 @@ function MobileScoringContent({ tournament }) {
 
     // --- PIN Entry ---
     if (!authorized) {
-        const requiresPin = tournament?.settings?.requirePin !== false;
-
         if (!requiresPin) {
             // Should auto-authorize, show loading
             return (
@@ -535,12 +558,26 @@ function MobileScoringContent({ tournament }) {
                 </div>
             </div>
 
+            {match.status === 'waiting' && (
+                <div className="card text-center" style={{ padding: '1.25rem', marginBottom: '0.75rem' }}>
+                    <p className="text-muted" style={{ marginBottom: '0.75rem' }}>Das Spiel ist bereit.</p>
+                    <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={handleStartMatch} id="btn-mobile-start-match">
+                        ▶ Spiel starten
+                    </button>
+                    {pinError && <div className="alert-error" style={{ marginTop: '0.75rem' }}>{pinError}</div>}
+                </div>
+            )}
+
             {/* ═══════ SCORE PAD ═══════ */}
             <ScorePad
                 onThrow={handleThrow}
                 onUndo={() => {
                     socket.emit('undo_throw', { matchId }, (res) => {
-                        if (!res.success) alert(res.error);
+                        if (res.code === 'UNAUTHORIZED') {
+                            sessionStorage.removeItem(pinStorageKey);
+                            setPinError(res.error);
+                            setAuthorized(false);
+                        } else if (!res.success) alert(res.error);
                         else {
                             setLastThrow(null);
                             setCheckout(res.checkout);

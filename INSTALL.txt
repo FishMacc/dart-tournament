@@ -1,37 +1,37 @@
-Dart Tournament Software
-========================
+Dart Tournament – Kurzanleitung
+================================
 
-Requirements:
+Voraussetzung
 -------------
-- Windows PC
-- Node.js installed (LTS version recommended)
-- Network connection (WiFi/LAN) for connecting phones
+- Node.js 18 oder neuer (LTS) von https://nodejs.org
+- Laptop und Handys im GLEICHEN WLAN (kein Gast-WLAN)
 
-Installation:
--------------
-1. No installation required!
-2. Just unzip the folder "DartTournament_v1.0".
-3. Place it anywhere on your computer (e.g., Desktop).
+Starten
+-------
+Windows:      "Start-Windows.bat" doppelklicken
+macOS:        "Start-Mac-Linux.command" doppelklicken
+              (beim ersten Mal: Rechtsklick -> Öffnen)
+Linux:        ./Start-Mac-Linux.command
 
-How to Start:
--------------
-1. Open the folder "DartTournament_v1.0".
-2. Double-click "start.bat".
-3. A black window will appear. Do not close it!
-4. It will show you an address like "http://192.168.1.5:3000".
+Ein Fenster mit den Adressen erscheint – NICHT schliessen!
+Der Browser öffnet sich automatisch auf http://localhost:3000
 
-How to Play:
-------------
-1. On your PC, open Chrome/Edge and go to the address shown.
-2. Set up the tournament (add players, choose 501/301).
-3. On your phone(s), scan the QR code shown on the PC screen.
-4. The phones are now scoring pads!
+Spielen
+-------
+1. Am Laptop Turnier erstellen, Spieler eintragen, Turnier starten.
+2. Handys scannen den QR-Code auf dem Turnier-Bildschirm.
+3. Am Handy das Spiel wählen, PIN vom Laptop eingeben, Würfe eintragen.
 
-Troubleshooting:
-----------------
-- If "start.bat" closes immediately: 
-  - Right-click "start.bat" -> Edit. Add "pause" at the end. Run again to see errors.
-  - Make sure Node.js is installed.
-- Phones can't connect?
-  - Ensure PC and phones are on the SAME WiFi.
-  - Check Windows Firewall (allow Node.js).
+Probleme?
+---------
+- Fenster schliesst sofort / "Node.js ist nicht installiert":
+  Node.js installieren, danach erneut starten.
+- Handys verbinden sich nicht:
+  * Gleiches WLAN? Gast-WLANs blockieren Geräte untereinander.
+  * Windows-Firewall: Zugriff für Node.js in "Privaten Netzwerken" erlauben.
+  * Falsche Adresse im QR-Code (z.B. VPN aktiv)? VPN trennen oder
+    die richtige IP erzwingen: set HOST_IP=192.168.1.5 (vor dem Start).
+- "Port 3000 wird bereits verwendet": Der Server läuft schon in einem
+  anderen Fenster.
+- Der Turnierstand wird automatisch gespeichert. Nach einem Absturz
+  einfach neu starten – das Turnier geht weiter.

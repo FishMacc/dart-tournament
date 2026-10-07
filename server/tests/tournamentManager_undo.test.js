@@ -132,18 +132,19 @@ describe('⏪ Undo Functionality', () => {
             recordThrow(match.id, 0, 1);
             recordThrow(match.id, 0, 1);
 
-            // Alice: T20 (60) -> 61, T20 (60) -> score=1 -> BUST with doubleOut! Resets to 61
+            // Alice: T20 (60) -> 61, T20 (60) -> score=1 -> BUST with doubleOut! Turn voided -> 121
             recordThrow(match.id, 20, 3); // -> 61
-            const bustResult = recordThrow(match.id, 20, 3); // BUST -> stays 61
+            const bustResult = recordThrow(match.id, 20, 3); // BUST -> back to 121
             expect(bustResult.throwResult.isBust).toBe(true);
-            expect(match.scores.player1).toBe(61);
+            expect(match.scores.player1).toBe(121);
+            expect(match.currentThrower).toBe('player2');
 
-            // Undo the bust throw — isBust=true so score doesn't change (stays at 61)
+            // Undo the bust throw -> back to 61, Alice on her 2nd dart again
             undoLastThrow(match.id);
 
-            // Score stays at 61 (undo of bust doesn't add score back since isBust=true)
             expect(match.scores.player1).toBe(61);
             expect(match.currentThrower).toBe('player1');
+            expect(match.currentTurnThrows).toBe(1);
         });
     });
 
@@ -180,11 +181,14 @@ describe('⏪ Undo Functionality', () => {
 
             expect(match.status).toBe('active');
             expect(match.winner).toBeNull();
-            // Note: When legsToWin is reached, throws aren't cleared, so Case 2 in undo
-            // doesn't fire. The legs counter stays at 1 but the match is reverted to active.
-            // Normal undo removes the throw and restores the score.
-            expect(match.legs.player1).toBe(1);
+            expect(match.legs.player1).toBe(0);
+            expect(match.legHistory).toHaveLength(0);
             expect(match.scores.player1).toBe(40);
+
+            // Re-finishing counts the leg exactly once
+            recordThrow(match.id, 20, 2);
+            expect(match.legs.player1).toBe(1);
+            expect(match.legHistory).toHaveLength(1);
         });
 
         it('should undo tournament-winning throw (revert tournament finished → active)', () => {
@@ -199,9 +203,61 @@ describe('⏪ Undo Functionality', () => {
 
             expect(t.status).toBe('active');
             expect(t.winner).toBeNull();
-            // Match is reverted to active but legs counter remains (see match-winning test above)
             expect(match.status).toBe('active');
             expect(match.winner).toBeNull();
+        });
+    });
+
+    // ==========================================
+    // 4b. Ordering, bracket safety
+    // ==========================================
+    describe('Undo ordering and bracket safety', () => {
+        it('should undo throws in order even with identical timestamps', () => {
+            const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1000);
+            const match = setupMatch();
+            recordThrow(match.id, 20, 1);
+            recordThrow(match.id, 20, 1);
+            recordThrow(match.id, 20, 1); // -> player2
+            recordThrow(match.id, 5, 1);  // player2 first dart
+            nowSpy.mockRestore();
+
+            undoLastThrow(match.id);
+            expect(match.throws.player2).toHaveLength(0);
+            expect(match.scores.player2).toBe(501);
+            undoLastThrow(match.id);
+            expect(match.throws.player1).toHaveLength(2);
+            expect(match.scores.player1).toBe(461);
+        });
+
+        it('should refuse to undo a match whose next match already started', () => {
+            initTournament('40', 1, { requirePin: false });
+            ['A', 'B', 'C', 'D'].forEach(addPlayer);
+            startTournament();
+            const t = getTournament();
+            const [m1, m2] = t.rounds[0];
+            startMatch(m1.id); recordThrow(m1.id, 20, 2);
+            startMatch(m2.id); recordThrow(m2.id, 20, 2);
+            const final = t.rounds[1][0];
+            startMatch(final.id);
+            recordThrow(final.id, 5, 1);
+
+            expect(() => undoLastThrow(m1.id)).toThrow(/already started/);
+            expect(m1.status).toBe('finished');
+            expect(final.player1).not.toBeNull();
+        });
+
+        it('should remove the winner from the next match when undoing', () => {
+            initTournament('40', 1, { requirePin: false });
+            ['A', 'B', 'C', 'D'].forEach(addPlayer);
+            startTournament();
+            const t = getTournament();
+            const m1 = t.rounds[0][0];
+            startMatch(m1.id); recordThrow(m1.id, 20, 2);
+            expect(t.rounds[1][0].player1).not.toBeNull();
+
+            undoLastThrow(m1.id);
+            expect(t.rounds[1][0].player1).toBeNull();
+            expect(t.rounds[1][0].status).toBe('scheduled');
         });
     });
 

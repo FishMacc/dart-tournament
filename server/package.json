@@ -3,18 +3,10 @@
   "version": "1.0.0",
   "description": "Dart Tournament Backend Server",
   "main": "src/server.js",
-  "bin": "src/server.js",
   "type": "module",
-  "pkg": {
-    "assets": [
-      "public/**/*"
-    ],
-    "targets": [
-      "node18-win-x64"
-    ]
-  },
   "scripts": {
-    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -27,5 +19,8 @@
   "devDependencies": {
     "socket.io-client": "^4.8.3",
     "vitest": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

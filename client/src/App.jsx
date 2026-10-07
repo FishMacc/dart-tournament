@@ -14,6 +14,7 @@ import LiveMatchPage from './pages/LiveMatchPage.jsx';
 export default function App() {
     const [tournament, setTournament] = useState(null);
     const [hostTournament, setHostTournament] = useState(null);
+    const [isHost, setIsHost] = useState(null);
     const [theme, setTheme] = useState(() => localStorage.getItem('dartvault-theme') || 'obsidian');
 
 
@@ -24,8 +25,13 @@ export default function App() {
     }, [theme]);
 
     useEffect(() => {
+        socket.on('session_info', (info) => {
+            setIsHost(!!info?.isHost);
+        });
+
         socket.on('tournament_update', (data) => {
             setTournament(data);
+            if (!data) setHostTournament(null);
         });
 
         // Host-only update with PINs
@@ -34,13 +40,18 @@ export default function App() {
         });
 
         return () => {
+            socket.off('session_info');
             socket.off('tournament_update');
             socket.off('tournament_update_host');
         };
     }, []);
 
     // Determine which page to show at root
+    // Only the host PC (or a device with the admin link) manages the tournament;
+    // everyone else gets the phone lobby.
     const getRootElement = () => {
+        if (isHost === null) return <p className="text-muted text-center" style={{ paddingTop: '4rem' }}>Verbinde mit Server...</p>;
+        if (!isHost) return <MobileLobby tournament={tournament} />;
         if (!tournament) return <HomePage onGetStarted={() => { }} />;
         if (tournament.status === 'setup') return <SetupPage tournament={tournament} />;
         return <TournamentPage tournament={tournament} hostTournament={hostTournament} />;
@@ -53,10 +64,10 @@ export default function App() {
                 <div className="container">
                     <Routes>
                         <Route path="/" element={getRootElement()} />
-                        <Route path="/setup" element={<SetupPage tournament={tournament} />} />
+                        <Route path="/setup" element={isHost ? <SetupPage tournament={tournament} /> : getRootElement()} />
                         <Route path="/live/:matchId" element={<LiveMatchPage tournament={tournament} />} />
                         <Route path="/mobile" element={<MobileLobby tournament={tournament} />} />
-                        <Route path="/mobile/match/:matchId" element={<MobileScoring tournament={tournament} />} />
+                        <Route path="/mobile/match/:matchId" element={<MobileScoring tournament={tournament} isHost={!!isHost} />} />
                     </Routes>
                 </div>
             </main>

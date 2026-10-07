@@ -5,6 +5,7 @@ export default defineConfig({
     plugins: [react()],
     server: {
         port: 5173,
+        host: true, // reachable from phones on the LAN
         proxy: {
             '/api': 'http://localhost:3000',
             '/socket.io': {
