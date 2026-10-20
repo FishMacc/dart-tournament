@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -21,5 +21,11 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm ci --prefix server
       - run: npm ci --prefix client
-      - run: npm run test:all
-      - run: npm run build
+      - name: Unit tests
+        run: npm run test:all
+      - name: Socket end-to-end tests
+        run: npm run test:e2e
+      - name: Install Chromium for the browser test
+        run: npx --prefix client playwright install --with-deps chromium
+      - name: Browser test (host + phone play a full tournament)
+        run: npm run test:ui

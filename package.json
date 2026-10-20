@@ -1,8 +1,8 @@
 {
     "name": "dart-tournament",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "private": true,
-    "description": "Local LAN dart tournament software - host on a PC, score on phones",
+    "description": "LAN dart tournament software: host on a PC, score on phones",
     "scripts": {
         "postinstall": "npm install --prefix server && npm install --prefix client",
         "start": "node scripts/start.mjs",
@@ -10,6 +10,8 @@
         "build": "npm run build --prefix client",
         "test": "npm test --prefix server",
         "test:all": "npm test --prefix server && npm test --prefix client",
+        "test:e2e": "npm run test:e2e --prefix server",
+        "test:ui": "npm run build && node client/e2e/ui.e2e.mjs",
         "release": "node scripts/build-release.mjs",
         "install:all": "npm install --prefix server && npm install --prefix client"
     },
@@ -18,5 +20,6 @@
     },
     "engines": {
         "node": ">=18"
-    }
+    },
+    "license": "MIT"
 }
