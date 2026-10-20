@@ -4,7 +4,7 @@
 // ============================================================
 import { io } from 'socket.io-client';
 
-const SERVER_URL = 'http://localhost:3000';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
 let passed = 0;
 let failed = 0;
 const errors = [];
@@ -31,9 +31,12 @@ function assertEq(actual, expected, testName) {
     }
 }
 
-function createSocket() {
+// Pretend to be a phone on the LAN: a forwarded non-loopback address makes the server treat this socket as a guest
+const GUEST_HEADERS = { 'x-forwarded-for': '192.0.2.10' };
+
+function createSocket({ guest = false } = {}) {
     return new Promise((resolve) => {
-        const socket = io(SERVER_URL, { transports: ['websocket'] });
+        const socket = io(SERVER_URL, { transports: ['websocket'], extraHeaders: guest ? GUEST_HEADERS : {} });
         socket.on('connect', () => resolve(socket));
     });
 }
@@ -197,7 +200,7 @@ async function testUnauthorizedThrow(matchId) {
     console.log('\n--- TEST: Unauthorized Throw ---');
     if (!matchId) { console.log('  [SKIP]'); return; }
 
-    const newSocket = await createSocket();
+    const newSocket = await createSocket({ guest: true });
     const res = await emit(newSocket, 'throw_dart', { matchId, value: 20, multiplier: 1 });
     assert(!res.success, 'Unauthorized throw rejected');
     newSocket.disconnect();

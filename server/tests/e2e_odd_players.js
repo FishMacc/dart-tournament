@@ -10,7 +10,7 @@ import { io } from 'socket.io-client';
 import http from 'http';
 import fs from 'fs';
 
-const SERVER_URL = 'http://localhost:3000';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
 const PLAYER_COUNT = 5;
 
 function createClient(name) {

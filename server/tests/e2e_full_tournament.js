@@ -8,12 +8,15 @@ import { io } from 'socket.io-client';
 import http from 'http';
 import fs from 'fs';
 
-const SERVER_URL = 'http://localhost:3000';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
 const PLAYER_COUNT = 16;
 
-function createClient(name) {
+// Pretend to be a phone on the LAN: a forwarded non-loopback address makes the server treat this socket as a guest
+const GUEST_HEADERS = { 'x-forwarded-for': '192.0.2.10' };
+
+function createClient(name, { guest = false } = {}) {
     return new Promise((resolve, reject) => {
-        const socket = io(SERVER_URL, { transports: ['websocket'] });
+        const socket = io(SERVER_URL, { transports: ['websocket'], extraHeaders: guest ? GUEST_HEADERS : {} });
         socket.on('connect', () => resolve(socket));
         socket.on('connect_error', (err) => reject(new Error(`${name} failed: ${err.message}`)));
         setTimeout(() => reject(new Error(`${name} timeout`)), 5000);
@@ -139,8 +142,8 @@ async function runFullTournament() {
     // Phase 2: Connections
     console.log('\n[Phase 2] Socket Connections');
     const host = await createClient('host');
-    const spectator = await createClient('spectator');
-    const mobile = await createClient('mobile');
+    const spectator = await createClient('spectator', { guest: true });
+    const mobile = await createClient('mobile', { guest: true });
     assert(host.connected, 'Host connected');
     assert(spectator.connected, 'Spectator connected');
     assert(mobile.connected, 'Mobile connected');
