@@ -1,37 +1,40 @@
-Dart Tournament – Kurzanleitung
-================================
+DartVault Dart Tournament - Quick Guide
+=======================================
 
-Voraussetzung
--------------
-- Node.js 18 oder neuer (LTS) von https://nodejs.org
-- Laptop und Handys im GLEICHEN WLAN (kein Gast-WLAN)
+Requirements
+------------
+- Node.js 18 or newer (LTS) from https://nodejs.org
+- Laptop and phones on the SAME Wi-Fi (not a guest network)
 
-Starten
--------
-Windows:      "Start-Windows.bat" doppelklicken
-macOS:        "Start-Mac-Linux.command" doppelklicken
-              (beim ersten Mal: Rechtsklick -> Öffnen)
+Start
+-----
+Windows:      double-click "Start-Windows.bat"
+macOS:        double-click "Start-Mac-Linux.command"
+              (first time: right-click -> Open)
 Linux:        ./Start-Mac-Linux.command
 
-Ein Fenster mit den Adressen erscheint – NICHT schliessen!
-Der Browser öffnet sich automatisch auf http://localhost:3000
+A window with the addresses appears - do NOT close it!
+The browser opens http://localhost:3000 automatically.
 
-Spielen
--------
-1. Am Laptop Turnier erstellen, Spieler eintragen, Turnier starten.
-2. Handys scannen den QR-Code auf dem Turnier-Bildschirm.
-3. Am Handy das Spiel wählen, PIN vom Laptop eingeben, Würfe eintragen.
+Play
+----
+1. On the laptop: create a tournament, add players, start it.
+2. Phones scan the QR code on the tournament screen.
+3. On the phone: pick the match, enter the PIN from the laptop, enter darts.
 
-Probleme?
+Language: the EN/DE button at the top right switches between English
+and German.
+
+Problems?
 ---------
-- Fenster schliesst sofort / "Node.js ist nicht installiert":
-  Node.js installieren, danach erneut starten.
-- Handys verbinden sich nicht:
-  * Gleiches WLAN? Gast-WLANs blockieren Geräte untereinander.
-  * Windows-Firewall: Zugriff für Node.js in "Privaten Netzwerken" erlauben.
-  * Falsche Adresse im QR-Code (z.B. VPN aktiv)? VPN trennen oder
-    die richtige IP erzwingen: set HOST_IP=192.168.1.5 (vor dem Start).
-- "Port 3000 wird bereits verwendet": Der Server läuft schon in einem
-  anderen Fenster.
-- Der Turnierstand wird automatisch gespeichert. Nach einem Absturz
-  einfach neu starten – das Turnier geht weiter.
+- The window closes right away / "Node.js is not installed":
+  Install Node.js, then start again.
+- Phones can't connect:
+  * Same Wi-Fi? Guest networks block devices from each other.
+  * Windows Firewall: allow Node.js on "Private networks".
+  * Wrong address in the QR code (e.g. VPN active)? Disconnect the VPN or
+    force the right IP: set HOST_IP=192.168.1.5 (before starting).
+- "Port 3000 is already in use": the server is already running in
+  another window.
+- The tournament is saved automatically. After a crash just start
+  again - the tournament continues.

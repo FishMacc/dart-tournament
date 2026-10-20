@@ -29,11 +29,11 @@ for (const f of ['package.json', 'package-lock.json']) {
 }
 fs.mkdirSync(path.join(releaseDir, 'scripts'));
 fs.copyFileSync(path.join(root, 'scripts', 'start.mjs'), path.join(releaseDir, 'scripts', 'start.mjs'));
-for (const f of ['Start-Windows.bat', 'Start-Mac-Linux.command', 'TURNIER_GUIDE.md']) {
+for (const f of ['Start-Windows.bat', 'Start-Mac-Linux.command', 'TOURNAMENT_GUIDE.md', 'LICENSE']) {
     fs.copyFileSync(path.join(root, f), path.join(releaseDir, f));
 }
 fs.chmodSync(path.join(releaseDir, 'Start-Mac-Linux.command'), 0o755);
-fs.copyFileSync(path.join(root, 'INSTALL.txt'), path.join(releaseDir, 'LIESMICH.txt'));
+fs.copyFileSync(path.join(root, 'INSTALL.txt'), path.join(releaseDir, 'README.txt'));
 
 console.log('\n📦 [3/3] Installing server production dependencies');
 sh('npm ci --omit=dev', releaseServer);
