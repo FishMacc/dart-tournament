@@ -42,7 +42,10 @@ for (const script of SCRIPTS) {
         });
         if (result.status !== 0) failed++;
     } finally {
+        // Wait until the port is free again before the next script starts its server
+        const exited = new Promise((resolve) => server.once('exit', resolve));
         server.kill();
+        await exited;
         fs.rmSync(dataDir, { recursive: true, force: true });
     }
 }

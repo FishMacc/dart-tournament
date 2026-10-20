@@ -236,6 +236,8 @@ try {
     process.exitCode = 1;
 } finally {
     await browser.close();
+    const exited = new Promise((resolve) => server.once('exit', resolve));
     server.kill();
+    await exited;
     fs.rmSync(dataDir, { recursive: true, force: true });
 }
