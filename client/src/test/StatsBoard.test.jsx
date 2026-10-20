@@ -74,7 +74,7 @@ describe('StatsBoard', () => {
     it('should render statistics heading', () => {
         const tournament = createMockTournament();
         render(<StatsBoard tournament={tournament} />);
-        expect(screen.getByText('Tournament statistics')).toBeInTheDocument();
+        expect(screen.getByText('Statistics')).toBeInTheDocument();
     });
 
     it('should display player names', () => {
@@ -87,11 +87,11 @@ describe('StatsBoard', () => {
     it('should display table headers', () => {
         const tournament = createMockTournament();
         render(<StatsBoard tournament={tournament} />);
-        expect(screen.getByText('Name')).toBeInTheDocument();
+        expect(screen.getByText('Player')).toBeInTheDocument();
         expect(screen.getByText('Matches')).toBeInTheDocument();
         expect(screen.getByText('Wins')).toBeInTheDocument();
         expect(screen.getByText('Legs')).toBeInTheDocument();
-        expect(screen.getByText('Avg (3)')).toBeInTheDocument();
+        expect(screen.getByText('3-dart avg')).toBeInTheDocument();
         expect(screen.getByText('Best leg')).toBeInTheDocument();
         expect(screen.getByText('High finish')).toBeInTheDocument();
     });
@@ -100,33 +100,33 @@ describe('StatsBoard', () => {
         const tournament = createMockTournament();
         render(<StatsBoard tournament={tournament} />);
 
-        const filterInput = screen.getByPlaceholderText('Search players...');
+        const filterInput = screen.getByPlaceholderText('Search players');
         fireEvent.change(filterInput, { target: { value: 'Alice' } });
 
         expect(screen.getByText('Alice')).toBeInTheDocument();
         expect(screen.queryByText('Bob')).not.toBeInTheDocument();
     });
 
-    it('should show CHAMPION badge when tournament has a winner', () => {
+    it('should show the champion badge in the table when tournament has a winner', () => {
         const tournament = createMockTournament({
             winner: { id: 'p1', name: 'Alice' },
         });
         render(<StatsBoard tournament={tournament} />);
-        expect(screen.getByText('CHAMPION')).toBeInTheDocument();
+        expect(screen.getByRole('table').querySelector('.badge')).toHaveTextContent('Champion');
     });
 
     it('should show winner spotlight when tournament winner exists', () => {
         const tournament = createMockTournament({
             winner: { id: 'p1', name: 'Alice' },
         });
-        render(<StatsBoard tournament={tournament} />);
-        expect(screen.getByText('And the winner is')).toBeInTheDocument();
+        const { container } = render(<StatsBoard tournament={tournament} />);
+        expect(container.querySelector('.champion')).toHaveTextContent('Alice');
     });
 
     it('should not show winner spotlight when no winner', () => {
         const tournament = createMockTournament();
-        render(<StatsBoard tournament={tournament} />);
-        expect(screen.queryByText('And the winner is')).not.toBeInTheDocument();
+        const { container } = render(<StatsBoard tournament={tournament} />);
+        expect(container.querySelector('.champion')).toBeNull();
     });
 
     it('should handle tournament with no players', () => {
@@ -140,9 +140,9 @@ describe('StatsBoard', () => {
         render(<StatsBoard tournament={tournament} />);
 
         // Click on "Name" to sort
-        fireEvent.click(screen.getByText('Name'));
+        fireEvent.click(screen.getByText('Player'));
 
-        // Click on "Spiele" to sort
+        // Click on "Matches" to sort
         fireEvent.click(screen.getByText('Matches'));
 
         // Should not crash

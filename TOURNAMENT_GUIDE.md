@@ -1,6 +1,6 @@
-# 🎯 DartVault — Tournament Day Guide
+# DartVault — Tournament Day Guide
 
-## 🏠 1. Before the day (at home, with internet)
+## 1. Before the day (at home, with internet)
 
 1. Install [Node.js](https://nodejs.org) (LTS).
 2. Start the app once: double-click `Start-Windows.bat` or `Start-Mac-Linux.command` (or run `npm install && npm start`).
@@ -9,7 +9,7 @@
 
 ---
 
-## 🏟️ 2. On the day
+## 2. On the day
 
 ### A. Devices
 * **1 laptop**: server and host. Shows the bracket and live scores on a **TV or projector**.
@@ -39,7 +39,7 @@ Players who prefer German can switch the language with the **EN/DE** button at t
 
 ---
 
-## ⚠️ 3. Checklist
+## 3. Checklist
 
 - [ ] Laptop charger
 - [ ] Wi-Fi password or hotspot ready
@@ -48,7 +48,7 @@ Players who prefer German can switch the language with the **EN/DE** button at t
 
 ---
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
 * **Phones can't reach the page?**
   * All on the *same* Wi-Fi? Guest networks often block devices from talking to each other.
@@ -58,4 +58,4 @@ Players who prefer German can switch the language with the **EN/DE** button at t
 * **Server crashed / laptop restarted?** Just start it again. The tournament is saved after every dart (`server/data/`) and loaded automatically.
 * **"Port 3000 is already in use"?** The server is already running in another window.
 
-**Good luck and good darts!** 🎯
+**Good luck and good darts!**

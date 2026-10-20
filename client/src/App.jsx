@@ -10,17 +10,28 @@ import MobileScoring from './pages/MobileScoring.jsx';
 import LiveMatchPage from './pages/LiveMatchPage.jsx';
 import { useI18n } from './i18n.jsx';
 
+const THEME_STORAGE_KEY = 'dartvault-theme';
+
+// Older versions stored 'obsidian' / 'neon' / 'classic'; anything that is not
+// 'light' or 'dark' falls back to the system preference.
+function initialTheme() {
+    try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored === 'light' || stored === 'dark') return stored;
+    } catch { /* storage blocked */ }
+    return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
 export default function App() {
     const { t } = useI18n();
     const [tournament, setTournament] = useState(null);
     const [hostTournament, setHostTournament] = useState(null);
     const [isHost, setIsHost] = useState(null);
-    const [theme, setTheme] = useState(() => localStorage.getItem('dartvault-theme') || 'obsidian');
+    const [theme, setTheme] = useState(initialTheme);
 
-    // Apply theme
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('dartvault-theme', theme);
+        try { localStorage.setItem(THEME_STORAGE_KEY, theme); } catch { /* storage blocked */ }
     }, [theme]);
 
     useEffect(() => {
@@ -45,36 +56,29 @@ export default function App() {
         };
     }, []);
 
-    // Determine which page to show at root
     // Only the host PC (or a device with the admin link) manages the tournament;
     // everyone else gets the phone lobby.
     const getRootElement = () => {
-        if (isHost === null) return <p className="text-muted text-center" style={{ paddingTop: '4rem' }}>{t('app.connecting')}</p>;
+        if (isHost === null) return <p className="center-state muted">{t('app.connecting')}</p>;
         if (!isHost) return <MobileLobby tournament={tournament} />;
-        if (!tournament) return <HomePage onGetStarted={() => { }} />;
+        if (!tournament) return <HomePage />;
         if (tournament.status === 'setup') return <SetupPage tournament={tournament} />;
         return <TournamentPage tournament={tournament} hostTournament={hostTournament} />;
     };
 
     return (
-        <>
+        <div className="app">
             <Header tournament={tournament} theme={theme} setTheme={setTheme} />
             <main className="page">
-                <div className="container">
-                    <Routes>
-                        <Route path="/" element={getRootElement()} />
-                        <Route path="/setup" element={isHost ? <SetupPage tournament={tournament} /> : getRootElement()} />
-                        <Route path="/live/:matchId" element={<LiveMatchPage tournament={tournament} />} />
-                        <Route path="/mobile" element={<MobileLobby tournament={tournament} />} />
-                        <Route path="/mobile/match/:matchId" element={<MobileScoring tournament={tournament} isHost={!!isHost} />} />
-                    </Routes>
-                </div>
+                <Routes>
+                    <Route path="/" element={getRootElement()} />
+                    <Route path="/setup" element={isHost ? <SetupPage tournament={tournament} /> : getRootElement()} />
+                    <Route path="/live/:matchId" element={<LiveMatchPage tournament={tournament} />} />
+                    <Route path="/mobile" element={<MobileLobby tournament={tournament} />} />
+                    <Route path="/mobile/match/:matchId" element={<MobileScoring tournament={tournament} isHost={!!isHost} />} />
+                </Routes>
             </main>
-            <footer className="footer">
-                <div className="container">
-                    {t('app.footer', { year: new Date().getFullYear() })}
-                </div>
-            </footer>
-        </>
+            <footer className="footer">{t('app.footer', { year: new Date().getFullYear() })}</footer>
+        </div>
     );
 }

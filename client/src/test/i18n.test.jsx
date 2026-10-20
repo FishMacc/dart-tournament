@@ -29,8 +29,8 @@ describe('i18n dictionaries', () => {
 
 describe('translate', () => {
     it('replaces placeholders', () => {
-        expect(translate('en', 'setup.start', { count: 4 })).toBe('Start tournament (4 players)');
-        expect(translate('de', 'setup.start', { count: 4 })).toBe('Turnier starten (4 Spieler)');
+        expect(translate('en', 'setup.start', { count: 4 })).toBe('Start with 4 players');
+        expect(translate('de', 'setup.start', { count: 4 })).toBe('Mit 4 Spielern starten');
     });
 
     it('falls back to English for an unknown language and to the key for an unknown key', () => {
@@ -49,7 +49,7 @@ describe('formatMoney', () => {
 describe('translateError', () => {
     it('uses the error code when there is one', () => {
         expect(translateError('en', { code: 'NOT_HOST', error: 'x' })).toBe('Only the tournament host can do that.');
-        expect(translateError('de', { code: 'UNAUTHORIZED', error: 'x' })).toBe('Nicht autorisiert! Bitte PIN eingeben.');
+        expect(translateError('de', { code: 'UNAUTHORIZED', error: 'x' })).toBe('Nicht freigeschaltet, bitte den Match-PIN eingeben.');
     });
 
     it('translates known server messages to German and passes others through', () => {

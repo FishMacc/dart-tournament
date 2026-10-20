@@ -1,13 +1,8 @@
 import { useState } from 'react';
-import { Target, X, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { useI18n } from '../i18n.jsx';
 
-const NUMBERS = [
-    1, 2, 3, 4, 5,
-    6, 7, 8, 9, 10,
-    11, 12, 13, 14, 15,
-    16, 17, 18, 19, 20,
-];
+const NUMBERS = Array.from({ length: 20 }, (_, i) => i + 1);
 
 export default function ScorePad({ onThrow, onUndo, disabled, canUndo }) {
     const { t } = useI18n();
@@ -21,8 +16,8 @@ export default function ScorePad({ onThrow, onUndo, disabled, canUndo }) {
 
     const handleBull = () => {
         if (disabled) return;
-        // Bull: value 25. Single = 25pts, Double = 50pts (Bull's Eye)
-        onThrow(25, multiplier === 3 ? 2 : multiplier); // No triple bull
+        // Bull: value 25. Single = 25pts, Double = 50pts (bullseye); there is no triple bull
+        onThrow(25, multiplier === 3 ? 2 : multiplier);
         setMultiplier(1);
     };
 
@@ -34,76 +29,37 @@ export default function ScorePad({ onThrow, onUndo, disabled, canUndo }) {
 
     return (
         <div>
-            {/* Multiplier Row */}
-            <div className="multiplier-row">
-                <button
-                    className={`multiplier-btn ${multiplier === 1 ? 'selected' : ''}`}
-                    onClick={() => setMultiplier(1)}
-                >
-                    {t('pad.single')}
-                </button>
-                <button
-                    className={`multiplier-btn ${multiplier === 2 ? 'selected' : ''}`}
-                    onClick={() => setMultiplier(2)}
-                >
-                    {t('pad.double')}
-                </button>
-                <button
-                    className={`multiplier-btn ${multiplier === 3 ? 'selected' : ''}`}
-                    onClick={() => setMultiplier(3)}
-                >
-                    {t('pad.triple')}
-                </button>
+            <div className="segmented multiplier-row" role="group">
+                {[[1, 'pad.single'], [2, 'pad.double'], [3, 'pad.triple']].map(([m, key]) => (
+                    <button
+                        key={m}
+                        type="button"
+                        className={`mult-${m}`}
+                        aria-pressed={multiplier === m}
+                        onClick={() => setMultiplier(m)}
+                    >
+                        {t(key)}
+                    </button>
+                ))}
             </div>
 
-            {/* Number Pad */}
             <div className="number-pad">
                 {NUMBERS.map((num) => (
-                    <button
-                        key={num}
-                        className="number-btn"
-                        onClick={() => handleNumberClick(num)}
-                        disabled={disabled}
-                    >
+                    <button key={num} className="number-btn" onClick={() => handleNumberClick(num)} disabled={disabled}>
                         {num}
                     </button>
                 ))}
             </div>
 
-            {/* Special Buttons */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
-                gap: '0.5rem',
-                marginBottom: '0.75rem',
-            }}>
-                <button
-                    className="number-btn bull"
-                    onClick={handleBull}
-                    disabled={disabled}
-                    style={{ aspectRatio: 'auto', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                >
-                    <Target size={20} /> {t('pad.bull')}
+            <div className="pad-specials">
+                <button className="number-btn bull" onClick={handleBull} disabled={disabled}>
+                    {t('pad.bull')}
                 </button>
-                <button
-                    className="number-btn miss"
-                    onClick={handleMiss}
-                    disabled={disabled}
-                    style={{ aspectRatio: 'auto', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                >
-                    <X size={20} /> {t('pad.miss')}
+                <button className="number-btn miss" onClick={handleMiss} disabled={disabled}>
+                    {t('pad.miss')}
                 </button>
-                <button
-                    className="btn btn-ghost"
-                    onClick={onUndo}
-                    disabled={disabled || !canUndo}
-                    style={{
-                        padding: '0.75rem',
-                        opacity: canUndo ? 1 : 0.4,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-                    }}
-                >
-                    <RotateCcw size={20} /> {t('pad.undo')}
+                <button className="number-btn undo" onClick={onUndo} disabled={disabled || !canUndo}>
+                    <RotateCcw size={17} /> {t('pad.undo')}
                 </button>
             </div>
         </div>

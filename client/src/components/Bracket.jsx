@@ -11,56 +11,51 @@ export default function Bracket({ rounds, onWatchLive }) {
         return t('bracket.round', { n: roundIndex + 1 });
     };
 
+    const playerClass = (match, key) => {
+        const player = match[key];
+        if (!player) return 'bracket-match-player tbd';
+        if (match.status !== 'finished' || !match.winner) return 'bracket-match-player';
+        return `bracket-match-player ${match.winner.id === player.id ? 'winner' : 'loser'}`;
+    };
+
     return (
         <div className="bracket-container">
             <div className="bracket">
                 {rounds.map((round, roundIndex) => (
                     <div key={roundIndex} className="bracket-round">
-                        <div className="bracket-round-title">
-                            {getRoundName(roundIndex, rounds.length)}
-                        </div>
-                        {round.map((match) => {
-                            const isActive = match.status === 'active';
-                            const isFinished = match.status === 'finished';
-                            const isBye = match.status === 'bye';
+                        <div className="eyebrow bracket-round-title">{getRoundName(roundIndex, rounds.length)}</div>
+                        <div className="bracket-round-matches">
+                            {round.map((match) => {
+                                if (match.status === 'bye') {
+                                    return (
+                                        <div key={match.id} className="bracket-match bye">
+                                            <div className="bracket-match-player">
+                                                <span>{match.winner?.name || t('bracket.bye')}</span>
+                                                <span className="eyebrow" style={{ fontSize: 10 }}>BYE</span>
+                                            </div>
+                                        </div>
+                                    );
+                                }
 
-                            if (isBye) {
+                                const isActive = match.status === 'active';
                                 return (
                                     <div
                                         key={match.id}
-                                        className="bracket-match finished"
-                                        style={{ opacity: 0.4 }}
+                                        className={`bracket-match ${isActive ? 'active' : ''} ${match.status === 'finished' ? 'finished' : ''}`}
+                                        onClick={() => isActive && onWatchLive && onWatchLive(match.id)}
                                     >
-                                        <div className="bracket-match-player">
-                                            <span>{match.winner?.name || t('bracket.bye')}</span>
-                                            <span className="bracket-match-score" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>BYE</span>
-                                        </div>
+                                        {['player1', 'player2'].map((key) => (
+                                            <div key={key} className={playerClass(match, key)}>
+                                                <span>{match[key]?.name || 'TBD'}</span>
+                                                <span className="bracket-match-score">
+                                                    {match[key] ? (match.legs?.[key] || 0) : ''}
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
                                 );
-                            }
-
-                            return (
-                                <div
-                                    key={match.id}
-                                    className={`bracket-match ${isActive ? 'active' : ''} ${isFinished ? 'finished' : ''}`}
-                                    onClick={() => isActive && onWatchLive && onWatchLive(match.id)}
-                                    style={{ cursor: isActive ? 'pointer' : 'default' }}
-                                >
-                                    <div className={`bracket-match-player ${isFinished && match.winner?.id === match.player1?.id ? 'winner' : ''} ${!match.player1 ? 'tbd' : ''}`}>
-                                        <span>{match.player1?.name || 'TBD'}</span>
-                                        <span className="bracket-match-score">
-                                            {match.player1 ? (match.legs?.player1 || 0) : ''}
-                                        </span>
-                                    </div>
-                                    <div className={`bracket-match-player ${isFinished && match.winner?.id === match.player2?.id ? 'winner' : ''} ${!match.player2 ? 'tbd' : ''}`}>
-                                        <span>{match.player2?.name || 'TBD'}</span>
-                                        <span className="bracket-match-score">
-                                            {match.player2 ? (match.legs?.player2 || 0) : ''}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                            })}
+                        </div>
                     </div>
                 ))}
             </div>

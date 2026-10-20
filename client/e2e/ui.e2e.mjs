@@ -48,7 +48,7 @@ async function shot(page, name) {
 }
 
 async function newPage(browser, who, options) {
-    const context = await browser.newContext(options);
+    const context = await browser.newContext({ colorScheme: process.env.COLOR_SCHEME || 'light', ...options });
     const page = await context.newPage();
     page.on('console', (m) => { if (m.type() === 'error') pageErrors.push(`[${who}] ${m.text()}`); });
     page.on('pageerror', (e) => pageErrors.push(`[${who}] ${e.message}`));
@@ -92,8 +92,8 @@ try {
     await shot(host, 'host-home');
     await host.click('#btn-get-started');
     await host.fill('#input-tournament-name', 'Friday Night Darts');
-    await host.selectOption('#select-game-type', '301');
-    await host.locator('.setting-row', { hasText: 'Prize pool' }).locator('.toggle-slider').click();
+    await host.click('#game-301');
+    await host.getByRole('checkbox', { name: 'Prize pool / entry fee' }).check();
     await host.fill('#input-entry-fee', '5');
     await shot(host, 'host-setup');
     await host.click('#btn-create-tournament');
@@ -162,7 +162,7 @@ try {
     await dart(phone, 3, 20);
     await dart(phone, 3, 20);
     await until(() => m().scores[first] === 121 && m().currentThrower === second, 'bust voids the whole turn');
-    await phone.getByText('BUST!').waitFor();
+    await phone.getByText(/^Bust/).waitFor();
     await shot(phone, 'phone-scoring');
     for (let i = 0; i < 3; i++) await dart(phone, 1, 0);
     await phone.reload();
@@ -208,17 +208,17 @@ try {
     // ---------- German ----------
     console.log('\nLanguage switch');
     await host.click('#btn-language');
-    await host.getByText('Turnierstatistik').waitFor();
+    await host.getByText('Statistik', { exact: true }).waitFor();
     check(await host.locator('html').getAttribute('lang') === 'de', 'host switched to German');
     check((await host.locator('.stats-board').innerText()).includes('15,00'), 'German money format');
     await host.reload();
-    await host.getByText('Turnierstatistik').waitFor();
+    await host.getByText('Statistik', { exact: true }).waitFor();
     check(true, 'language choice survives a reload');
     await host.click('#btn-language');
-    await host.getByText('Tournament statistics').waitFor();
+    await host.getByText('Statistics', { exact: true }).waitFor();
     await phone.goto(BASE);
     await phone.click('#btn-language');
-    await phone.getByText('Turnier beendet!').waitFor();
+    await phone.getByText('Turnier beendet').waitFor();
     check(true, 'phone lobby in German');
     await shot(phone, 'phone-finished-de');
 

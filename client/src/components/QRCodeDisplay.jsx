@@ -16,40 +16,14 @@ export default function QRCodeDisplay() {
             });
     }, []);
 
-    if (error) {
-        return (
-            <div className="qr-section">
-                <p className="text-muted">{t('qr.error')}</p>
-            </div>
-        );
-    }
-
-    if (!qrData) {
-        return (
-            <div className="qr-section">
-                <p className="text-muted">{t('qr.loading')}</p>
-            </div>
-        );
-    }
+    if (error) return <p className="qr-section muted">{t('qr.error')}</p>;
+    if (!qrData) return <p className="qr-section muted">{t('qr.loading')}</p>;
 
     return (
         <div className="qr-section">
-            <h3 style={{ marginBottom: '1rem' }}>{t('qr.title')}</h3>
-            <p className="text-muted mb-2" style={{ fontSize: '0.9rem' }}>
-                {t('qr.text')}
-            </p>
-
-            <div className="qr-code-container">
-                <img
-                    src={qrData.qrCode}
-                    alt={t('qr.alt')}
-                    width="200"
-                    height="200"
-                />
-                <div className="qr-url">
-                    {qrData.url}/mobile
-                </div>
-            </div>
+            <img className="qr-code" src={qrData.qrCode} alt={t('qr.alt')} width="200" height="200" />
+            <div className="qr-url">{qrData.url}/mobile</div>
+            <p className="setting-desc" style={{ marginTop: 6 }}>{t('qr.text')}</p>
         </div>
     );
 }

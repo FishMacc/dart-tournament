@@ -12,7 +12,7 @@ describe('QRCodeDisplay', () => {
         global.fetch = vi.fn(() => new Promise(() => { }));
 
         render(<QRCodeDisplay />);
-        expect(screen.getByText('Loading QR code...')).toBeInTheDocument();
+        expect(screen.getByText('Loading QR code…')).toBeInTheDocument();
     });
 
     it('should show error state on fetch failure', async () => {
@@ -42,11 +42,7 @@ describe('QRCodeDisplay', () => {
 
         render(<QRCodeDisplay />);
 
-        await waitFor(() => {
-            expect(screen.getByText('📱 Phone scoring')).toBeInTheDocument();
-        });
-
-        const img = screen.getByAltText('QR code for the phone view');
+        const img = await screen.findByAltText('QR code for the phone view');
         expect(img).toBeInTheDocument();
         expect(img.getAttribute('src')).toBe('data:image/png;base64,fakeQRdata');
 
@@ -66,7 +62,7 @@ describe('QRCodeDisplay', () => {
         render(<QRCodeDisplay />);
 
         await waitFor(() => {
-            expect(screen.getByText(/Scan the QR code/)).toBeInTheDocument();
+            expect(screen.getByText(/Scan with a phone/)).toBeInTheDocument();
         });
     });
 });

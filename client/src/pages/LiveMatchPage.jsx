@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Activity, CheckCircle, Target, Trophy, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Trophy } from 'lucide-react';
 import socket from '../socket.js';
 import { useI18n } from '../i18n.jsx';
 
@@ -32,8 +32,6 @@ export default function LiveMatchPage({ tournament }) {
         };
 
         socket.on('match_update', handleMatchUpdate);
-
-        // Join spectator room
         socket.emit('spectate_match', { matchId });
 
         return () => {
@@ -42,133 +40,57 @@ export default function LiveMatchPage({ tournament }) {
     }, [matchId]);
 
     if (!match) {
-        return (
-            <div className="text-center animate-fade-in" style={{ paddingTop: '4rem' }}>
-                <p className="text-muted">{t('live.loading')}</p>
-            </div>
-        );
+        return <p className="center-state muted">{t('live.loading')}</p>;
     }
 
     const isActive = match.status === 'active';
     const isFinished = match.status === 'finished';
 
-    // Get the last few throws for history
-    const recentThrowsP1 = (match.throws?.player1 || []).slice(-6);
-    const recentThrowsP2 = (match.throws?.player2 || []).slice(-6);
-
     return (
-        <div className="animate-fade-in" style={{ padding: '2rem 0' }}>
-            {/* Header */}
-            <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                marginBottom: '2rem', flexWrap: 'wrap', gap: '0.5rem',
-            }}>
-                <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => navigate(-1)}
-                    id="btn-back"
-                >
-                    {t('live.back')}
+        <div className="live">
+            <div className="spread" style={{ marginBottom: 20 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)} id="btn-back">
+                    <ChevronLeft size={16} /> {t('live.back')}
                 </button>
-
-                {isActive && (
-                    <span className="badge badge-live" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Activity size={12} /> LIVE
-                    </span>
-                )}
-                {isFinished && (
-                    <span className="badge badge-success" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <CheckCircle size={12} /> {t('live.finished')}
-                    </span>
-                )}
+                {isActive && <span className="badge badge-live">{t('header.status.active')}</span>}
+                {isFinished && <span className="badge badge-success">{t('live.finished')}</span>}
             </div>
 
-            {/* Score Display */}
-            <div className="live-match-container">
-                {/* Player 1 */}
-                <div className={`live-player-panel ${match.currentThrower === 'player1' && isActive ? 'active-panel' : ''}`}>
-                    <div className="live-player-name">{match.player1?.name}</div>
-                    <div className="live-player-score">
-                        {isFinished ? match.legs?.player1 : match.scores?.player1}
-                    </div>
-                    <div className="live-player-legs">
-                        {isFinished ? t('live.legs') : t('live.legsN', { n: match.legs?.player1 || 0 })}
-                    </div>
-                    {match.currentThrower === 'player1' && isActive && (
-                        <div className="live-thrower-indicator" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-                            <Target size={14} /> {t('live.throwing')}
+            <div className="board live-match-container">
+                {['player1', 'player2'].map((key) => {
+                    const isThrowing = isActive && match.currentThrower === key;
+                    const isWinner = isFinished && match.winner?.id === match[key]?.id;
+                    return (
+                        <div key={key} className={`board-row ${isThrowing ? 'is-throwing' : ''} ${isWinner ? 'is-winner' : ''}`}>
+                            <span className="indicator" />
+                            <span className="name">{match[key]?.name}</span>
+                            <span className="legs num" title={t('live.legs')}>{match.legs?.[key] || 0}</span>
+                            <span className="score num live-player-score">
+                                {isFinished ? (isWinner && <Trophy size={48} aria-label={t('live.winner')} />) : match.scores?.[key]}
+                            </span>
                         </div>
-                    )}
-                    {isFinished && match.winner?.id === match.player1?.id && (
-                        <div style={{ marginTop: '0.5rem', color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                            <Trophy size={20} /> {t('live.winner')}
-                        </div>
-                    )}
-                </div>
-
-                {/* VS */}
-                <div className="live-vs">VS</div>
-
-                {/* Player 2 */}
-                <div className={`live-player-panel ${match.currentThrower === 'player2' && isActive ? 'active-panel' : ''}`}>
-                    <div className="live-player-name">{match.player2?.name}</div>
-                    <div className="live-player-score">
-                        {isFinished ? match.legs?.player2 : match.scores?.player2}
-                    </div>
-                    <div className="live-player-legs">
-                        {isFinished ? t('live.legs') : t('live.legsN', { n: match.legs?.player2 || 0 })}
-                    </div>
-                    {match.currentThrower === 'player2' && isActive && (
-                        <div className="live-thrower-indicator" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-                            <Target size={14} /> {t('live.throwing')}
-                        </div>
-                    )}
-                    {isFinished && match.winner?.id === match.player2?.id && (
-                        <div style={{ marginTop: '0.5rem', color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                            <Trophy size={20} /> {t('live.winner')}
-                        </div>
-                    )}
-                </div>
+                    );
+                })}
             </div>
 
-            {/* Throw History */}
-            {(recentThrowsP1.length > 0 || recentThrowsP2.length > 0) && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '2rem' }}>
-                    <div className="live-history">
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            {match.player1?.name}
+            <div className="live-history">
+                {['player1', 'player2'].map((key) => {
+                    const recent = (match.throws?.[key] || []).slice(-9);
+                    return (
+                        <div key={key} className="panel panel-body">
+                            <div className="eyebrow">{match[key]?.name}</div>
+                            <div className="throw-chips">
+                                {recent.map((d, i) => (
+                                    <span key={i} className={`throw-chip ${d.isBust ? 'bust' : ''}`}>
+                                        {d.isBust ? 'BUST' : getThrowLabel(d.value, d.multiplier)}
+                                    </span>
+                                ))}
+                                {recent.length === 0 && <span className="faint" style={{ fontSize: 14 }}>{t('live.noThrows')}</span>}
+                            </div>
                         </div>
-                        <div className="throw-history-list">
-                            {recentThrowsP1.map((t, i) => (
-                                <span key={i} className={`throw-chip ${t.isBust ? 'bust' : ''}`}>
-                                    {t.isBust ? <AlertTriangle size={12} /> : getThrowLabel(t.value, t.multiplier)}
-                                </span>
-                            ))}
-                            {recentThrowsP1.length === 0 && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{t('live.noThrows')}</span>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="live-history">
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            {match.player2?.name}
-                        </div>
-                        <div className="throw-history-list">
-                            {recentThrowsP2.map((t, i) => (
-                                <span key={i} className={`throw-chip ${t.isBust ? 'bust' : ''}`}>
-                                    {t.isBust ? <AlertTriangle size={12} /> : getThrowLabel(t.value, t.multiplier)}
-                                </span>
-                            ))}
-                            {recentThrowsP2.length === 0 && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{t('live.noThrows')}</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -176,6 +98,6 @@ export default function LiveMatchPage({ tournament }) {
 function getThrowLabel(value, multiplier) {
     if (value === 0) return 'Miss';
     const prefix = multiplier === 1 ? 'S' : multiplier === 2 ? 'D' : 'T';
-    if (value === 25) return multiplier === 2 ? 'Bullseye' : 'Bull';
+    if (value === 25) return multiplier === 2 ? 'BULL' : '25';
     return `${prefix}${value}`;
 }

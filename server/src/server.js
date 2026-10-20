@@ -43,7 +43,7 @@ app.get('/api/lan-info', async (req, res) => {
         const qrCode = await QRCode.toDataURL(mobileUrl, {
             width: 300,
             margin: 2,
-            color: { dark: '#ffffff', light: '#00000000' },
+            color: { dark: '#151513', light: '#00000000' },
         });
 
         res.json({ ip, port: PORT, url, mobileUrl, qrCode });

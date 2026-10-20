@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Trophy, ListFilter, ArrowUpDown, TrendingUp, Hash, ArrowUpCircle } from 'lucide-react';
+import { Trophy, Search, ArrowUpDown } from 'lucide-react';
 import { useI18n } from '../i18n.jsx';
 
 export default function StatsBoard({ tournament }) {
@@ -252,133 +252,93 @@ export default function StatsBoard({ tournament }) {
     };
 
     const SortIcon = ({ field }) => {
-        if (sortField !== field) return <ArrowUpDown size={14} style={{ opacity: 0.3 }} />;
-        return <ArrowUpDown size={14} style={{ transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none' }} />;
+        if (sortField !== field) return <ArrowUpDown size={12} style={{ opacity: 0.35 }} />;
+        return <ArrowUpDown size={12} style={{ color: 'var(--red)', transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none' }} />;
     };
 
     if (!tournament) return null;
 
+    const hasPrize = tournament.settings?.entryFee > 0;
+    const columns = [
+        ['matchesPlayed', 'stats.matches'],
+        ['wins', 'stats.wins'],
+        ['legsWon', 'stats.legs'],
+        ['average', 'stats.avg'],
+        ['bestLeg', 'stats.bestLeg'],
+        ['highFinish', 'stats.hiFin'],
+    ];
+
     return (
-        <div className="stats-board animate-fade-in">
-            <div className="stats-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
-                    <Trophy className="text-accent" size={28} />
-                    <span>{t('stats.title')}</span>
-                </h2>
-
-                <div style={{ position: 'relative' }}>
-                    <ListFilter size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
-                    <input
-                        type="text"
-                        placeholder={t('stats.search')}
-                        aria-label={t('stats.search')}
-                        value={filterName}
-                        onChange={e => setFilterName(e.target.value)}
-                        className="input"
-                        style={{ paddingLeft: '2.2rem', width: '200px', fontSize: '0.9rem' }}
-                    />
-                </div>
-            </div>
-
-            <div className="stats-table-container custom-scrollbar">
-                <table className="stats-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 0.5rem' }}>
-                    <thead>
-                        <tr>
-                            <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    {t('stats.name')} <SortIcon field="name" />
-                                </div>
-                            </th>
-                            <th onClick={() => handleSort('matchesPlayed')} style={{ cursor: 'pointer', textAlign: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    {t('stats.matches')} <SortIcon field="matchesPlayed" />
-                                </div>
-                            </th>
-                            <th onClick={() => handleSort('wins')} style={{ cursor: 'pointer', textAlign: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    {t('stats.wins')} <SortIcon field="wins" />
-                                </div>
-                            </th>
-                            <th onClick={() => handleSort('legsWon')} style={{ cursor: 'pointer', textAlign: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    {t('stats.legs')} <SortIcon field="legsWon" />
-                                </div>
-                            </th>
-                            <th onClick={() => handleSort('average')} style={{ cursor: 'pointer', textAlign: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    {t('stats.avg')} <SortIcon field="average" />
-                                </div>
-                            </th>
-                            <th onClick={() => handleSort('bestLeg')} style={{ cursor: 'pointer', textAlign: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    {t('stats.bestLeg')} <SortIcon field="bestLeg" />
-                                </div>
-                            </th>
-                            <th onClick={() => handleSort('highFinish')} style={{ cursor: 'pointer', textAlign: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    {t('stats.hiFin')} <SortIcon field="highFinish" />
-                                </div>
-                            </th>
-                            {tournament.settings?.entryFee > 0 && <th style={{ textAlign: 'center' }}>{t('stats.prize')}</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sortedStats.map((player) => (
-                            <tr key={player.id} className="stats-row animate-scale-in">
-                                <td style={{ padding: '1rem', background: 'var(--bg-card)', borderRadius: '8px 0 0 8px', fontWeight: 600 }}>
-                                    {player.name}
-                                    {tournament.winner?.id === player.id && <span className="badge badge-success" style={{ marginLeft: '0.75rem', fontSize: '0.7rem' }}>{t('stats.champion')}</span>}
-                                </td>
-                                <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)' }}>{player.matchesPlayed}</td>
-                                <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)', color: 'var(--accent-success)' }}>{player.wins}</td>
-                                <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)' }}>{player.legsWon}</td>
-
-                                {/* Average */}
-                                <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)', fontWeight: 600 }}>
-                                    {player.average}
-                                    {player.isBestAvg && <TrendingUp size={14} className="text-accent" style={{ marginLeft: '0.25rem', verticalAlign: 'middle' }} />}
-                                </td>
-
-                                {/* Best Leg */}
-                                <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)' }}>
-                                    {player.bestLeg}{player.bestLeg !== '-' && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}> {t('stats.darts')}</span>}
-                                    {player.isBestLeg && <Hash size={14} className="text-accent" style={{ marginLeft: '0.25rem', verticalAlign: 'middle' }} />}
-                                </td>
-
-                                {/* High Finish */}
-                                <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)', borderRadius: tournament.settings?.entryFee > 0 ? '0' : '0 8px 8px 0' }}>
-                                    {player.highFinish}
-                                    {player.isHighFin && <ArrowUpCircle size={14} className="text-accent" style={{ marginLeft: '0.25rem', verticalAlign: 'middle' }} />}
-                                </td>
-                                {tournament.settings?.entryFee > 0 && (
-                                    <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)', borderRadius: '0 8px 8px 0', fontWeight: 700, color: '#eab308' }}>
-                                        {payoutMap[player.id] ? money(payoutMap[player.id]) : '-'}
-                                    </td>
-                                )}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Winner Spotlight */}
+        <div className="stats-board stack">
             {tournament.winner && (
-                <div className="winner-spotlight card gradient-card animate-bounce-in" style={{ marginTop: '2rem', textAlign: 'center', padding: '3rem' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👑</div>
-                    <h3 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{t('stats.winnerIs')}</h3>
-                    <h1 style={{
-                        fontSize: '3.5rem',
-                        background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        marginBottom: '1rem',
-                        backgroundClip: 'text',
-                    }}>
-                        {tournament.winner.name}
-                    </h1>
-                    <p className="text-muted">{t('stats.tournament', { name: tournament.name || tournament.type })}</p>
+                <div className="champion">
+                    <Trophy className="champion-icon" size={44} />
+                    <div style={{ minWidth: 0 }}>
+                        <div className="eyebrow">{t('stats.champion')}</div>
+                        <div className="display champion-name">{tournament.winner.name}</div>
+                    </div>
+                    {payoutMap[tournament.winner.id] > 0 && (
+                        <div className="num champion-prize">{money(payoutMap[tournament.winner.id])}</div>
+                    )}
                 </div>
             )}
+
+            <section className="panel">
+                <div className="panel-head wrap">
+                    <span className="eyebrow">{t('stats.title')}</span>
+                    <div className="search">
+                        <Search size={15} />
+                        <input
+                            type="text"
+                            placeholder={t('stats.search')}
+                            aria-label={t('stats.search')}
+                            value={filterName}
+                            onChange={e => setFilterName(e.target.value)}
+                            className="input"
+                        />
+                    </div>
+                </div>
+                <div className="stats-table-container">
+                    <table className="stats-table">
+                        <thead>
+                            <tr>
+                                <th onClick={() => handleSort('name')}>
+                                    <span className="th-inner">{t('stats.name')} <SortIcon field="name" /></span>
+                                </th>
+                                {columns.map(([field, key]) => (
+                                    <th key={field} onClick={() => handleSort(field)}>
+                                        <span className="th-inner">{t(key)} <SortIcon field={field} /></span>
+                                    </th>
+                                ))}
+                                {hasPrize && <th>{t('stats.prize')}</th>}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedStats.map((player) => (
+                                <tr key={player.id} className="stats-row">
+                                    <td className="player-cell">
+                                        {player.name}
+                                        {tournament.winner?.id === player.id && <span className="badge badge-solid" style={{ marginLeft: 10 }}>{t('stats.championShort')}</span>}
+                                    </td>
+                                    <td>{player.matchesPlayed}</td>
+                                    <td>{player.wins}</td>
+                                    <td>{player.legsWon}</td>
+                                    <td className={player.isBestAvg ? 'best' : ''}>{player.average}</td>
+                                    <td className={player.isBestLeg ? 'best' : ''}>
+                                        {player.bestLeg}{player.bestLeg !== '-' && <span className="faint"> {t('stats.darts')}</span>}
+                                    </td>
+                                    <td className={player.isHighFin ? 'best' : ''}>{player.highFinish}</td>
+                                    {hasPrize && (
+                                        <td className={payoutMap[player.id] ? 'money' : 'faint'}>
+                                            {payoutMap[player.id] ? money(payoutMap[player.id]) : '-'}
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     );
 }

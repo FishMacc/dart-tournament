@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import socket from '../socket.js';
+import { ChevronLeft, Lock, Play, SlidersHorizontal, Trophy } from 'lucide-react';
 import ScorePad from '../components/ScorePad.jsx';
 import { useI18n } from '../i18n.jsx';
 
 function ErrorFallback({ error }) {
     const { t } = useI18n();
     return (
-        <div style={{ padding: '2rem', color: 'white', textAlign: 'center' }}>
-            <h2>{t('scoring.error')}</h2>
-            <p className="text-muted mt-1">{t('scoring.error.text')}</p>
-            <pre style={{ textAlign: 'left', background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', overflow: 'auto', marginTop: '1rem', fontSize: '0.8rem' }}>
+        <div className="phone center-state">
+            <h2 className="display">{t('scoring.error')}</h2>
+            <p className="muted">{t('scoring.error.text')}</p>
+            <pre className="note" style={{ textAlign: 'left', overflow: 'auto', margin: '16px 0' }}>
                 {error?.toString()}
             </pre>
-            <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
+            <button className="btn btn-primary" onClick={() => window.location.reload()}>
                 {t('scoring.reload')}
             </button>
         </div>
@@ -159,31 +160,36 @@ function MobileScoringContent({ tournament, isHost }) {
         });
     };
 
+    const handleUndo = () => {
+        socket.emit('undo_throw', { matchId }, (res) => {
+            if (res.code === 'UNAUTHORIZED') {
+                sessionStorage.removeItem(pinStorageKey);
+                setPinError(errorText(res));
+                setAuthorized(false);
+            } else if (!res.success) {
+                alert(errorText(res));
+            } else {
+                setLastThrow(null);
+                setCheckout(res.checkout);
+            }
+        });
+    };
+
     // --- Loading ---
     if (!match) {
-        return (
-            <div className="scoring-container animate-fade-in text-center" style={{ paddingTop: '4rem' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '1rem', opacity: 0.5 }}>🎯</div>
-                <p className="text-muted">{t('scoring.loading')}</p>
-            </div>
-        );
+        return <p className="phone center-state muted">{t('scoring.loading')}</p>;
     }
 
     // --- Finished ---
     if (match.status === 'finished') {
         return (
-            <div className="scoring-container animate-fade-in text-center" style={{ paddingTop: '4rem' }}>
-                <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🎉</div>
-                <h2>{t('scoring.finished')}</h2>
-                <p className="mt-1" style={{ fontSize: '1.3rem', color: 'var(--accent-primary)' }}>
-                    {t('scoring.winner')} <strong>{match.winner?.name}</strong>
-                </p>
-                <button
-                    className="btn btn-secondary mt-3"
-                    onClick={() => navigate('/mobile')}
-                    id="btn-back-to-lobby"
-                >
-                    {t('scoring.backToLobby')}
+            <div className="phone center-state">
+                <Trophy size={44} style={{ color: 'var(--amber)' }} />
+                <h2 className="display">{t('scoring.finished')}</h2>
+                <p className="eyebrow" style={{ marginTop: 20 }}>{t('scoring.winner')}</p>
+                <p className="display" style={{ fontSize: 48, marginTop: 4 }}>{match.winner?.name}</p>
+                <button className="btn btn-secondary" style={{ marginTop: 28 }} onClick={() => navigate('/mobile')} id="btn-back-to-lobby">
+                    <ChevronLeft size={16} /> {t('scoring.backToLobby')}
                 </button>
             </div>
         );
@@ -192,427 +198,146 @@ function MobileScoringContent({ tournament, isHost }) {
     // --- PIN Entry ---
     if (!authorized) {
         if (!requiresPin) {
-            // Should auto-authorize, show loading
-            return (
-                <div className="scoring-container animate-fade-in text-center" style={{ paddingTop: '4rem' }}>
-                    <p className="text-muted">{t('scoring.connecting')}</p>
-                </div>
-            );
+            return <p className="phone center-state muted">{t('scoring.connecting')}</p>;
         }
 
         return (
-            <div className="scoring-container animate-fade-in" style={{ paddingTop: '3rem' }}>
-                <div className="text-center mb-2">
-                    <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔒</div>
-                    <h2>{t('scoring.enterPin')}</h2>
-                    <p className="text-muted mt-1" style={{ fontSize: '0.9rem' }}>
-                        {match.player1?.name} vs {match.player2?.name}
-                    </p>
-                    <p className="text-muted" style={{ fontSize: '0.8rem' }}>
-                        {t('scoring.pinHint')}
-                    </p>
+            <div className="phone">
+                <div className="center-state" style={{ paddingBottom: 24 }}>
+                    <Lock size={36} />
+                    <h2 className="display">{t('scoring.enterPin')}</h2>
+                    <p className="muted">{match.player1?.name} vs {match.player2?.name}</p>
+                    <p className="faint" style={{ fontSize: 14 }}>{t('scoring.pinHint')}</p>
                 </div>
 
-                <form onSubmit={handlePinSubmit}>
+                <form onSubmit={handlePinSubmit} className="stack">
                     <input
-                        className="input"
+                        className="input pin-input"
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
                         maxLength={4}
-                        placeholder="● ● ● ●"
+                        placeholder="····"
+                        aria-label={t('scoring.enterPin')}
                         value={pinInput}
                         onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
                         autoFocus
                         id="input-match-pin"
-                        style={{
-                            textAlign: 'center',
-                            fontSize: '2rem',
-                            fontFamily: 'var(--font-mono)',
-                            fontWeight: 800,
-                            letterSpacing: '0.5em',
-                            padding: '1rem',
-                            marginBottom: '1rem',
-                        }}
                     />
-
-                    {pinError && (
-                        <div className="alert-error" style={{ marginBottom: '1rem' }}>
-                            {pinError}
-                        </div>
-                    )}
-
-                    <button
-                        className="btn btn-primary btn-lg"
-                        type="submit"
-                        style={{ width: '100%' }}
-                        disabled={pinInput.length !== 4}
-                        id="btn-verify-pin"
-                    >
+                    {pinError && <div className="alert-error">{pinError}</div>}
+                    <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={pinInput.length !== 4} id="btn-verify-pin">
                         {t('scoring.confirm')}
                     </button>
-                </form>
-
-                <div className="mt-2">
-                    <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => navigate('/mobile')}
-                        style={{ width: '100%' }}
-                    >
-                        {t('scoring.back')}
+                    <button type="button" className="btn btn-ghost btn-block" onClick={() => navigate('/mobile')}>
+                        <ChevronLeft size={16} /> {t('scoring.back')}
                     </button>
-                </div>
+                </form>
             </div>
         );
     }
 
     // --- Scoring Interface (authorized) ---
-    const currentThrowerName =
-        match.currentThrower === 'player1' ? match.player1?.name : match.player2?.name;
-
-    // Compute current turn darts
     const turnCount = match.currentTurnThrows || 0;
-    const throwerKey = match.currentThrower;
-    const throwerThrows = match.throws?.[throwerKey] || [];
+    const throwerThrows = match.throws?.[match.currentThrower] || [];
     const currentTurnDarts = turnCount > 0 ? throwerThrows.slice(-turnCount) : [];
-
-    // Build the 3 dart slot data
-    const dartSlots = [0, 1, 2].map((i) => {
-        if (i < currentTurnDarts.length) {
-            const t = currentTurnDarts[i];
-            return {
-                filled: true,
-                label: getThrowLabel(t.value, t.multiplier),
-                score: t.score,
-                isBust: t.isBust,
-            };
-        }
-        return { filled: false, label: '—', score: null, isBust: false };
-    });
-
-    const turnTotal = currentTurnDarts.reduce((sum, t) => sum + (t.isBust ? 0 : t.score), 0);
+    const turnTotal = currentTurnDarts.reduce((sum, d) => sum + (d.isBust ? 0 : d.score), 0);
 
     return (
-        <div className="scoring-container animate-fade-in">
-            {/* ═══════ TOP HEADER BAR ═══════ */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.6rem 0',
-                marginBottom: '0.5rem',
-                borderBottom: '1px solid var(--border-color)',
-            }}>
-                <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => navigate('/mobile')}
-                    style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
-                    aria-label={t('scoring.back')}
-                >
-                    ←
+        <div className="phone">
+            <div className="scoring-top">
+                <button className="icon-btn" onClick={() => navigate('/mobile')} aria-label={t('scoring.back')}>
+                    <ChevronLeft size={18} />
                 </button>
-                <span style={{
-                    fontSize: '0.8rem',
-                    color: 'var(--text-muted)',
-                    fontWeight: 600,
-                }}>
-                    {match.player1?.name} vs {match.player2?.name}
-                </span>
-                <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => setShowSettings(true)}
-                    style={{ fontSize: '1.1rem', padding: '0.4rem 0.6rem', lineHeight: 1 }}
-                    aria-label={t('scoring.settings')}
-                >
-                    ⚙️
+                <span className="title">{match.player1?.name} vs {match.player2?.name}</span>
+                <button className="icon-btn" onClick={() => setShowSettings(true)} aria-label={t('scoring.settings')}>
+                    <SlidersHorizontal size={16} />
                 </button>
             </div>
 
-            {/* ═══════ SETTINGS MODAL ═══════ */}
             {showSettings && (
                 <div className="modal-overlay" onClick={() => setShowSettings(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h3 className="mb-2">{t('scoring.settings')}</h3>
-                        <div className="setting-row" style={{
-                            borderBottom: '1px solid var(--border-color)',
-                            paddingBottom: '0.75rem',
-                        }}>
-                            <div className="setting-info">
-                                <span className="setting-label">{t('scoring.checkoutHints')}</span>
-                                <span className="setting-desc">{t('scoring.checkoutHints.desc')}</span>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+                        <h3 className="display" style={{ fontSize: 28, marginBottom: 8 }}>{t('scoring.settings')}</h3>
+                        <div className="setting-row">
+                            <div>
+                                <div className="setting-label">{t('scoring.checkoutHints')}</div>
+                                <div className="setting-desc">{t('scoring.checkoutHints.desc')}</div>
                             </div>
                             <label className="toggle-switch">
                                 <input
                                     type="checkbox"
                                     checked={showCheckoutHints}
                                     onChange={(e) => setShowCheckoutHints(e.target.checked)}
+                                    aria-label={t('scoring.checkoutHints')}
                                 />
                                 <span className="toggle-slider"></span>
                             </label>
                         </div>
-                        <button
-                            className="btn btn-primary mt-3"
-                            style={{ width: '100%' }}
-                            onClick={() => setShowSettings(false)}
-                        >
-                            {t('scoring.done')}
-                        </button>
+                        <div className="modal-actions">
+                            <button className="btn btn-primary" onClick={() => setShowSettings(false)}>{t('scoring.done')}</button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* ═══════ SCORE CARDS ═══════ */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '0.5rem',
-                marginBottom: '0.75rem',
-            }}>
-                {['player1', 'player2'].map((pKey) => {
-                    const isActive = match.currentThrower === pKey;
-                    const player = match[pKey];
-                    const score = match.scores?.[pKey];
-                    const legs = match.legs?.[pKey] || 0;
+            <div className="score-rows">
+                {['player1', 'player2'].map((key) => {
+                    const isThrowing = match.currentThrower === key;
                     return (
-                        <div key={pKey} style={{
-                            background: isActive
-                                ? `linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.12), rgba(var(--accent-secondary-rgb), 0.08))`
-                                : 'var(--bg-card)',
-                            border: isActive
-                                ? '2px solid rgba(var(--accent-primary-rgb), 0.5)'
-                                : '1px solid var(--border-color)',
-                            borderRadius: 'var(--radius-lg)',
-                            padding: '0.75rem',
-                            textAlign: 'center',
-                            transition: 'all 0.3s ease',
-                            position: 'relative',
-                        }}>
-                            {isActive && (
-                                <div style={{
-                                    position: 'absolute', top: '-6px', left: '50%',
-                                    transform: 'translateX(-50%)',
-                                    background: 'var(--gradient-accent)',
-                                    color: '#fff', fontSize: '0.55rem', fontWeight: 700,
-                                    padding: '2px 10px', borderRadius: 'var(--radius-full)',
-                                    textTransform: 'uppercase', letterSpacing: '0.08em',
-                                }}>
-                                    {t('scoring.throwing')}
+                        <div key={key} className={`score-row ${isThrowing ? 'is-throwing' : ''}`}>
+                            <span className="indicator" />
+                            <div className="who">
+                                <div className="name">{match[key]?.name}</div>
+                                <div className="sub">
+                                    <span>{t('scoring.legs', { n: match.legs?.[key] || 0 })}</span>
+                                    {isThrowing && showCheckoutHints && checkout && <span className="checkout">{checkout}</span>}
                                 </div>
-                            )}
-                            <div style={{
-                                fontSize: '0.8rem', fontWeight: 600,
-                                color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
-                                marginBottom: '0.2rem',
-                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                            }}>
-                                {player?.name}
                             </div>
-                            <div style={{
-                                fontSize: '2.2rem', fontWeight: 900,
-                                fontFamily: 'var(--font-display)',
-                                color: isActive ? 'var(--accent-primary)' : 'var(--text-primary)',
-                                lineHeight: 1.1,
-                            }}>
-                                {score}
-                            </div>
-                            {legs > 0 && (
-                                <div style={{
-                                    fontSize: '0.7rem', color: 'var(--text-muted)',
-                                    marginTop: '0.15rem',
-                                }}>
-                                    {t('scoring.legs', { n: legs })}
-                                </div>
-                            )}
-                            {isActive && showCheckoutHints && checkout && (
-                                <div style={{
-                                    fontSize: '0.75rem', marginTop: '0.3rem',
-                                    color: 'var(--accent-success)', fontWeight: 600,
-                                }}>
-                                    🎯 {checkout}
-                                </div>
-                            )}
+                            <span className="score num">{match.scores?.[key]}</span>
                         </div>
                     );
                 })}
             </div>
 
-            {/* ═══════ DART SLOTS (3 Fields) ═══════ */}
-            <div style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '0.75rem',
-                marginBottom: '0.75rem',
-            }}>
-                <div style={{
-                    display: 'flex', justifyContent: 'space-between',
-                    alignItems: 'center', marginBottom: '0.5rem',
-                }}>
-                    <span style={{
-                        fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)',
-                        textTransform: 'uppercase', letterSpacing: '0.06em',
-                    }}>
-                        🎯 {t('scoring.turn', { name: currentThrowerName })}
-                    </span>
-                    {turnCount > 0 && (
-                        <span style={{
-                            fontSize: '0.85rem', fontWeight: 800,
-                            color: 'var(--accent-primary)',
-                            fontFamily: 'var(--font-mono)',
-                        }}>
-                            = {turnTotal}
-                        </span>
-                    )}
-                </div>
-
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
-                    gap: '0.5rem',
-                }}>
-                    {dartSlots.map((slot, i) => {
-                        const isNext = i === turnCount && turnCount < 3;
-                        return (
-                            <div
-                                key={i}
-                                style={{
-                                    background: slot.filled
-                                        ? slot.isBust
-                                            ? 'rgba(248, 81, 73, 0.12)'
-                                            : `rgba(var(--accent-primary-rgb), 0.1)`
-                                        : isNext
-                                            ? `rgba(var(--accent-primary-rgb), 0.04)`
-                                            : 'rgba(255,255,255,0.02)',
-                                    border: slot.filled
-                                        ? slot.isBust
-                                            ? '2px solid rgba(248, 81, 73, 0.4)'
-                                            : `2px solid rgba(var(--accent-primary-rgb), 0.3)`
-                                        : isNext
-                                            ? `2px dashed rgba(var(--accent-primary-rgb), 0.3)`
-                                            : '2px solid rgba(255,255,255,0.04)',
-                                    borderRadius: 'var(--radius-md)',
-                                    padding: '0.6rem 0.3rem',
-                                    textAlign: 'center',
-                                    transition: 'all 0.2s ease',
-                                    position: 'relative',
-                                    minHeight: '60px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <div style={{
-                                    fontSize: '0.55rem', fontWeight: 700,
-                                    color: 'var(--text-muted)',
-                                    textTransform: 'uppercase',
-                                    marginBottom: '0.15rem',
-                                    letterSpacing: '0.06em',
-                                }}>
-                                    {t('scoring.dart', { n: i + 1 })}
-                                </div>
-
-                                <div style={{
-                                    fontSize: slot.filled ? '1.2rem' : '1rem',
-                                    fontWeight: 800,
-                                    fontFamily: 'var(--font-display)',
-                                    color: slot.filled
-                                        ? slot.isBust
-                                            ? 'var(--accent-danger)'
-                                            : 'var(--text-primary)'
-                                        : isNext
-                                            ? `rgba(var(--accent-primary-rgb), 0.4)`
-                                            : 'rgba(255,255,255,0.08)',
-                                }}>
-                                    {slot.filled
-                                        ? slot.isBust ? '💥' : slot.label
-                                        : isNext ? '?' : '—'
-                                    }
-                                </div>
-
-                                {slot.filled && !slot.isBust && (
-                                    <div style={{
-                                        fontSize: '0.65rem',
-                                        color: 'var(--text-muted)',
-                                        fontFamily: 'var(--font-mono)',
-                                        marginTop: '0.1rem',
-                                    }}>
-                                        {t('scoring.pts', { n: slot.score })}
-                                    </div>
-                                )}
-                                {slot.isBust && (
-                                    <div style={{
-                                        fontSize: '0.6rem',
-                                        color: 'var(--accent-danger)',
-                                        marginTop: '0.1rem', fontWeight: 700,
-                                    }}>
-                                        BUST
-                                    </div>
-                                )}
-
-                                {isNext && (
-                                    <div style={{
-                                        position: 'absolute', inset: '-2px',
-                                        borderRadius: 'var(--radius-md)',
-                                        border: `2px solid rgba(var(--accent-primary-rgb), 0.2)`,
-                                        animation: 'pulse 2s ease-in-out infinite',
-                                        pointerEvents: 'none',
-                                    }} />
-                                )}
-                            </div>
-                        );
-                    })}
+            <div className="turn" aria-label={t('scoring.turn')}>
+                {[0, 1, 2].map((i) => {
+                    const dart = currentTurnDarts[i];
+                    const isNext = i === turnCount && turnCount < 3 && match.status === 'active';
+                    return (
+                        <div key={i} className={`dart-slot num ${dart?.isBust ? 'is-bust' : ''} ${isNext ? 'is-next' : ''}`}>
+                            <span className="slot-label">{t('scoring.dart', { n: i + 1 })}</span>
+                            {dart ? (dart.isBust ? 'BUST' : getThrowLabel(dart.value, dart.multiplier)) : <span className="faint">–</span>}
+                        </div>
+                    );
+                })}
+                <div className="turn-total num">
+                    <span className="slot-label" style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--faint)', fontStretch: '100%' }}>{t('scoring.total')}</span>
+                    {turnTotal}
                 </div>
             </div>
 
             {match.status === 'waiting' && (
-                <div className="card text-center" style={{ padding: '1.25rem', marginBottom: '0.75rem' }}>
-                    <p className="text-muted" style={{ marginBottom: '0.75rem' }}>{t('scoring.ready')}</p>
-                    <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={handleStartMatch} id="btn-mobile-start-match">
-                        {t('scoring.start')}
+                <div className="panel panel-body" style={{ marginBottom: 12, textAlign: 'center' }}>
+                    <p className="muted" style={{ marginBottom: 12 }}>{t('scoring.ready')}</p>
+                    <button className="btn btn-primary btn-lg btn-block" onClick={handleStartMatch} id="btn-mobile-start-match">
+                        <Play size={16} /> {t('scoring.start')}
                     </button>
-                    {pinError && <div className="alert-error" style={{ marginTop: '0.75rem' }}>{pinError}</div>}
+                    {pinError && <div className="alert-error" style={{ marginTop: 12 }}>{pinError}</div>}
                 </div>
             )}
 
-            {/* ═══════ SCORE PAD ═══════ */}
             <ScorePad
                 onThrow={handleThrow}
-                onUndo={() => {
-                    socket.emit('undo_throw', { matchId }, (res) => {
-                        if (res.code === 'UNAUTHORIZED') {
-                            sessionStorage.removeItem(pinStorageKey);
-                            setPinError(errorText(res));
-                            setAuthorized(false);
-                        } else if (!res.success) alert(errorText(res));
-                        else {
-                            setLastThrow(null);
-                            setCheckout(res.checkout);
-                        }
-                    });
-                }}
+                onUndo={handleUndo}
                 disabled={match.status !== 'active'}
                 canUndo={match.throws?.player1?.length > 0 || match.throws?.player2?.length > 0}
             />
 
-            {/* ═══════ STATUS BAR ═══════ */}
             {lastThrow && (
-                <div style={{
-                    textAlign: 'center', padding: '0.5rem',
-                    fontSize: '0.85rem', fontWeight: 600,
-                    color: lastThrow.isBust ? 'var(--accent-danger)'
-                        : lastThrow.isFinish ? 'var(--accent-success)'
-                            : 'var(--text-muted)',
-                    background: lastThrow.isBust ? 'rgba(248,81,73,0.08)'
-                        : lastThrow.isFinish ? 'rgba(63,185,80,0.08)'
-                            : 'transparent',
-                    borderRadius: 'var(--radius-md)',
-                    marginTop: '0.5rem',
-                }}>
-                    {lastThrow.isBust ? '💥 BUST!' : lastThrow.isFinish ? '🎉 FINISH!' : `${lastThrow.label} (${lastThrow.score})`}
+                <div className={`throw-status ${lastThrow.isBust ? 'is-bust' : lastThrow.isFinish ? 'is-finish' : ''}`} role="status">
+                    {lastThrow.isBust ? t('scoring.bust') : lastThrow.isFinish ? t('scoring.checkoutDone') : `${lastThrow.label} · ${lastThrow.score}`}
                 </div>
             )}
-
         </div>
     );
 }
@@ -620,6 +345,6 @@ function MobileScoringContent({ tournament, isHost }) {
 function getThrowLabel(value, multiplier) {
     if (value === 0) return 'Miss';
     const prefix = multiplier === 1 ? 'S' : multiplier === 2 ? 'D' : 'T';
-    if (value === 25) return multiplier === 2 ? 'Bullseye' : 'Bull';
+    if (value === 25) return multiplier === 2 ? 'BULL' : '25';
     return `${prefix}${value}`;
 }

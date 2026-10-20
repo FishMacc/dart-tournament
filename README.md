@@ -1,4 +1,6 @@
-# 🎯 DartVault — Dart Tournament
+<img src="docs/logo.svg" width="72" alt="DartVault logo">
+
+# DartVault — Dart Tournament
 
 [![CI](https://github.com/FishMacc/dart-tournament/actions/workflows/ci.yml/badge.svg)](https://github.com/FishMacc/dart-tournament/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -6,7 +8,7 @@
 
 Dart tournament software for your local network. A laptop runs the tournament and shows the bracket and live scores (ideally on a TV or projector). Players enter their darts on their own phones: scan a QR code and go. No app, no account, no internet needed on the day.
 
-![Host view: bracket, waiting match with PIN](docs/screenshots/bracket.png)
+![Host screen: next match with PIN, bracket, QR code and prize pool](docs/screenshots/bracket.png)
 
 <p align="center">
   <img src="docs/screenshots/phone-lobby.png" width="260" alt="Phone lobby">
@@ -24,10 +26,10 @@ Dart tournament software for your local network. A laptop runs the tournament an
 - **Statistics:** 3-dart average, best leg, highest finish, wins and legs
 - **Prize pool:** entry fee with winner-takes-all, 70/30, top-4 or custom payouts
 - **English and German:** switch with the `EN`/`DE` button in the header
-- **Three themes:** Obsidian, Neon, Classic
+- **Light and dark mode**, following the system setting until you pick one
 - **Crash-safe:** the tournament is saved after every dart and survives a restart
 
-![Statistics after the final](docs/screenshots/statistics.png)
+![Champion and statistics after the final](docs/screenshots/statistics.png)
 
 ## Quick start
 

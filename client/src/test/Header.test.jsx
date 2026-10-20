@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Header from '../components/Header.jsx';
 
@@ -77,5 +77,24 @@ describe('Header', () => {
             </MemoryRouter>
         );
         expect(screen.getByText('501')).toBeInTheDocument();
+    });
+
+    it('should toggle between dark and light theme', () => {
+        const setTheme = vi.fn();
+        const { rerender } = render(
+            <MemoryRouter>
+                <Header tournament={null} theme="dark" setTheme={setTheme} />
+            </MemoryRouter>
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Switch to light mode' }));
+        expect(setTheme).toHaveBeenCalledWith('light');
+
+        rerender(
+            <MemoryRouter>
+                <Header tournament={null} theme="light" setTheme={setTheme} />
+            </MemoryRouter>
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
+        expect(setTheme).toHaveBeenCalledWith('dark');
     });
 });

@@ -1,18 +1,41 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Users, Settings, Lock, Zap, Shuffle, Sparkles, RotateCcw, Rocket, Check, X, Plus } from 'lucide-react';
+import { Plus, X, RotateCcw, ArrowRight } from 'lucide-react';
 import socket from '../socket.js';
 import { useI18n } from '../i18n.jsx';
 
+const GAME_TYPES = ['301', '501', '701'];
+const LEG_OPTIONS = [1, 2, 3, 4, 5]; // legs to win: 1 = single leg, 2 = best of 3, …
+
+function Toggle({ label, desc, checked, onChange, disabled }) {
+    return (
+        <div className="setting-row">
+            <div>
+                <div className="setting-label">{label}</div>
+                <div className="setting-desc">{desc}</div>
+            </div>
+            <label className="toggle-switch">
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => onChange(e.target.checked)}
+                    disabled={disabled}
+                    aria-label={label}
+                />
+                <span className="toggle-slider"></span>
+            </label>
+        </div>
+    );
+}
+
 export default function SetupPage({ tournament }) {
     const navigate = useNavigate();
-    const { t, errorText } = useI18n();
+    const { t, money, errorText } = useI18n();
     const [gameType, setGameType] = useState('501');
     const [legsToWin, setLegsToWin] = useState(1);
     const [playerName, setPlayerName] = useState('');
     const [error, setError] = useState('');
 
-    // Settings
     const [requirePin, setRequirePin] = useState(true);
     const [doubleOut, setDoubleOut] = useState(true);
     const [autoStartMatches, setAutoStartMatches] = useState(false);
@@ -24,18 +47,19 @@ export default function SetupPage({ tournament }) {
     const [enablePrizePool, setEnablePrizePool] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    const players = tournament?.players || [];
+    const isTournamentCreated = !!tournament;
+    const customSum = customDist[0] + customDist[1] + customDist[2];
+
     const handleCreateTournament = () => {
         if (isLoading) return;
         if (enablePrizePool && (!entryFee || Number(entryFee) < 0.50)) {
             setError(t('setup.err.fee'));
             return;
         }
-        if (enablePrizePool && distributionMode === 'custom') {
-            const sum = customDist.reduce((a, b) => a + b, 0);
-            if (sum !== 100) {
-                setError(t('setup.err.sum', { sum }));
-                return;
-            }
+        if (enablePrizePool && distributionMode === 'custom' && customSum !== 100) {
+            setError(t('setup.err.sum', { sum: customSum }));
+            return;
         }
 
         setIsLoading(true);
@@ -89,316 +113,187 @@ export default function SetupPage({ tournament }) {
         });
     };
 
-    const players = tournament?.players || [];
-    const isTournamentCreated = tournament !== null;
+    const setCustomShare = (index, value) => {
+        const next = [...customDist];
+        next[index] = parseInt(value) || 0;
+        setCustomDist(next);
+    };
+
+    const legsLabel = (n) => (n === 1 ? t('setup.legs.single') : t('setup.legs.bestOf', { n: n * 2 - 1 }));
 
     return (
-        <div className="setup-page animate-fade-in">
-            {/* Hero */}
-            <div className="setup-hero">
-                <h1>
-                    <Target className="inline-icon" size={32} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
-                    {isTournamentCreated && tournament?.name ? tournament.name : t('setup.newTournament')}
-                </h1>
-                <p>
-                    {isTournamentCreated ? t('setup.subtitle.players') : t('setup.subtitle.create')}
-                </p>
+        <div>
+            <div className="page-head">
+                <div>
+                    <div className="eyebrow">{isTournamentCreated ? t('setup.step2') : t('setup.step1')}</div>
+                    <h1 className="display page-title">
+                        {isTournamentCreated && tournament?.name ? tournament.name : t('setup.newTournament')}
+                    </h1>
+                </div>
+                {isTournamentCreated && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => socket.emit('reset_tournament')}>
+                        <RotateCcw size={14} /> {t('setup.reconfigure')}
+                    </button>
+                )}
             </div>
 
-            {error && (
-                <div className="alert-error" role="alert">
-                    {error}
-                </div>
-            )}
+            {error && <div className="alert-error" role="alert" style={{ marginBottom: 20 }}>{error}</div>}
 
             <div className="setup-grid">
-                {/* ═══════ LEFT: Game Settings ═══════ */}
-                <div className="card">
-                    <div className="setup-section-title">
-                        <Settings size={20} />
-                        <span>{t('setup.settings')}</span>
-                    </div>
-
-                    {/* Tournament Name */}
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="input-tournament-name">{t('setup.name')}</label>
-                        <input
-                            className="input"
-                            type="text"
-                            placeholder={t('setup.namePlaceholder')}
-                            value={tournamentName}
-                            onChange={(e) => setTournamentName(e.target.value)}
-                            disabled={isTournamentCreated}
-                            id="input-tournament-name"
-                        />
-                    </div>
-
-                    {/* Game Mode */}
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="select-game-type">{t('setup.gameMode')}</label>
-                        <select
-                            className="input select"
-                            value={gameType}
-                            onChange={(e) => setGameType(e.target.value)}
-                            disabled={isTournamentCreated}
-                            id="select-game-type"
-                        >
-                            <option value="301">301</option>
-                            <option value="501">501</option>
-                            <option value="701">701</option>
-                        </select>
-                    </div>
-
-                    {/* Legs */}
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="select-legs">{t('setup.legs')}</label>
-                        <select
-                            className="input select"
-                            value={legsToWin}
-                            onChange={(e) => setLegsToWin(e.target.value)}
-                            disabled={isTournamentCreated}
-                            id="select-legs"
-                        >
-                            <option value="1">{t('setup.legs.single')}</option>
-                            <option value="2">{t('setup.legs.bestOf', { n: 3 })}</option>
-                            <option value="3">{t('setup.legs.bestOf', { n: 5 })}</option>
-                            <option value="4">{t('setup.legs.bestOf', { n: 7 })}</option>
-                            <option value="5">{t('setup.legs.bestOf', { n: 9 })}</option>
-                        </select>
-                    </div>
-
-                    {/* Advanced Settings */}
-                    <div className="settings-group">
-                        <div className="settings-group-title">{t('setup.advanced')}</div>
-
-                        <div className="setting-row">
-                            <div className="setting-info">
-                                <span className="setting-label"><Lock size={16} /> {t('setup.pin')}</span>
-                                <span className="setting-desc">{t('setup.pin.desc')}</span>
-                            </div>
-                            <label className="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={requirePin}
-                                    onChange={(e) => setRequirePin(e.target.checked)}
-                                    disabled={isTournamentCreated}
-                                />
-                                <span className="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        <div className="setting-row">
-                            <div className="setting-info">
-                                <span className="setting-label"><Target size={16} /> {t('setup.doubleOut')}</span>
-                                <span className="setting-desc">{t('setup.doubleOut.desc')}</span>
-                            </div>
-                            <label className="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={doubleOut}
-                                    onChange={(e) => setDoubleOut(e.target.checked)}
-                                    disabled={isTournamentCreated}
-                                />
-                                <span className="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        <div className="setting-row">
-                            <div className="setting-info">
-                                <span className="setting-label"><Zap size={16} /> {t('setup.autoStart')}</span>
-                                <span className="setting-desc">{t('setup.autoStart.desc')}</span>
-                            </div>
-                            <label className="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={autoStartMatches}
-                                    onChange={(e) => setAutoStartMatches(e.target.checked)}
-                                    disabled={isTournamentCreated}
-                                />
-                                <span className="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        <div className="setting-row">
-                            <div className="setting-info">
-                                <span className="setting-label"><Shuffle size={16} /> {t('setup.shuffle')}</span>
-                                <span className="setting-desc">{t('setup.shuffle.desc')}</span>
-                            </div>
-                            <label className="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={shufflePlayers}
-                                    onChange={(e) => setShufflePlayers(e.target.checked)}
-                                    disabled={isTournamentCreated}
-                                />
-                                <span className="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        {/* Prize Pool Toggle */}
-                        <div className="setting-row" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '1rem' }}>
-                            <div className="setting-info">
-                                <span className="setting-label">💰 {t('setup.prize')}</span>
-                                <span className="setting-desc">{t('setup.prize.desc')}</span>
-                            </div>
-                            <label className="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={enablePrizePool}
-                                    onChange={(e) => setEnablePrizePool(e.target.checked)}
-                                    disabled={isTournamentCreated}
-                                />
-                                <span className="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        {/* Money Settings (Conditional, nested) */}
-                        {enablePrizePool && (
-                            <div className="animate-fade-in" style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-muted)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                                {/* Entry Fee */}
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="input-entry-fee">{t('setup.entryFee')}</label>
-                                    <input
-                                        className="input"
-                                        type="number"
-                                        min="0.50"
-                                        step="0.50"
-                                        placeholder="0.50"
-                                        id="input-entry-fee"
-                                        value={entryFee}
-                                        onChange={(e) => setEntryFee(e.target.value)}
-                                        disabled={isTournamentCreated}
-                                    />
-                                </div>
-
-                                {/* Distribution Mode */}
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="select-distribution">{t('setup.distribution')}</label>
-                                    <select
-                                        className="input select"
-                                        value={distributionMode}
-                                        onChange={(e) => setDistributionMode(e.target.value)}
-                                        id="select-distribution"
-                                        disabled={isTournamentCreated}
-                                    >
-                                        <option value="winner_100">{t('setup.dist.winner')}</option>
-                                        <option value="split_70_30">{t('setup.dist.final')}</option>
-                                        <option value="split_50_30_20">{t('setup.dist.top4')}</option>
-                                        <option value="custom">{t('setup.dist.custom')}</option>
-                                    </select>
-                                </div>
-
-                                {/* Custom Distribution Inputs */}
-                                {distributionMode === 'custom' && (
-                                    <div className="form-group animate-fade-in" style={{ marginTop: '-0.5rem', marginLeft: '1rem', borderLeft: '2px solid var(--accent-primary)', paddingLeft: '1rem' }}>
-                                        <label className="form-label" style={{ fontSize: '0.85rem' }}>{t('setup.dist.customLabel')}</label>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                                            <div>
-                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('setup.place1')}</span>
-                                                <input
-                                                    type="number"
-                                                    className="input"
-                                                    min="0"
-                                                    max="100"
-                                                    value={customDist[0]}
-                                                    onChange={(e) => {
-                                                        const newDist = [...customDist];
-                                                        newDist[0] = parseInt(e.target.value) || 0;
-                                                        setCustomDist(newDist);
-                                                    }}
-                                                    disabled={isTournamentCreated}
-                                                />
-                                            </div>
-                                            <div>
-                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('setup.place2')}</span>
-                                                <input
-                                                    type="number"
-                                                    className="input"
-                                                    min="0"
-                                                    max="100"
-                                                    value={customDist[1]}
-                                                    onChange={(e) => {
-                                                        const newDist = [...customDist];
-                                                        newDist[1] = parseInt(e.target.value) || 0;
-                                                        setCustomDist(newDist);
-                                                    }}
-                                                    disabled={isTournamentCreated}
-                                                />
-                                            </div>
-                                            <div>
-                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('setup.place34')}</span>
-                                                <input
-                                                    type="number"
-                                                    className="input"
-                                                    min="0"
-                                                    max="100"
-                                                    value={customDist[2]}
-                                                    onChange={(e) => {
-                                                        const newDist = [...customDist];
-                                                        newDist[2] = parseInt(e.target.value) || 0;
-                                                        setCustomDist(newDist);
-                                                    }}
-                                                    disabled={isTournamentCreated}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div style={{
-                                            marginTop: '0.25rem',
-                                            fontSize: '0.8rem',
-                                            color: (customDist[0] + customDist[1] + customDist[2]) === 100 ? 'var(--accent-success)' : 'var(--accent-danger)',
-                                            fontWeight: 700
-                                        }}>
-                                            {t('setup.sum', { sum: customDist[0] + customDist[1] + customDist[2] })}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Create Button */}
-                    {!isTournamentCreated && (
-                        <button
-                            className="btn btn-primary btn-lg"
-                            onClick={handleCreateTournament}
-                            disabled={isLoading}
-                            style={{ width: '100%', marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isLoading ? 0.6 : 1 }}
-                            id="btn-create-tournament"
-                        >
-                            <Sparkles size={20} /> {isLoading ? t('setup.creating') : t('setup.create')}
-                        </button>
-                    )}
-
-                    {isTournamentCreated && (
-                        <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
-                            <span className="badge badge-success" style={{ fontSize: '0.8rem', padding: '0.35rem 1rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Check size={14} /> {t('setup.created', { type: tournament.type })}
+                {/* Settings */}
+                <section className="panel">
+                    <div className="panel-head">
+                        <span className="eyebrow">{t('setup.settings')}</span>
+                        {isTournamentCreated && (
+                            <span className="badge badge-success">
+                                {t('setup.created', { type: tournament.type })}
                                 {!tournament.settings?.requirePin && t('setup.noPin')}
                             </span>
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => {
-                                    socket.emit('reset_tournament');
-                                }}
-                                style={{ margin: '0.75rem auto 0', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                            >
-                                <RotateCcw size={14} /> {t('setup.reconfigure')}
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* ═══════ RIGHT: Players ═══════ */}
-                <div className="card">
-                    <div className="setup-section-title">
-                        <Users size={20} />
-                        <span>{t('setup.players', { count: players.length })}</span>
+                        )}
                     </div>
+                    <div className="panel-body">
+                        <div className="field">
+                            <label className="field-label" htmlFor="input-tournament-name">{t('setup.name')}</label>
+                            <input
+                                className="input"
+                                type="text"
+                                placeholder={t('setup.namePlaceholder')}
+                                value={isTournamentCreated ? (tournament.name || '') : tournamentName}
+                                onChange={(e) => setTournamentName(e.target.value)}
+                                disabled={isTournamentCreated}
+                                id="input-tournament-name"
+                            />
+                        </div>
 
-                    {isTournamentCreated ? (
-                        <>
-                            <form onSubmit={handleAddPlayer}>
-                                <div className="player-add-row">
+                        <div className="field">
+                            <span className="field-label">{t('setup.gameMode')}</span>
+                            <div className="segmented" role="group" aria-label={t('setup.gameMode')}>
+                                {GAME_TYPES.map((type) => (
+                                    <button
+                                        key={type}
+                                        type="button"
+                                        className="num"
+                                        style={{ fontSize: 20 }}
+                                        aria-pressed={(isTournamentCreated ? tournament.type : gameType) === type}
+                                        onClick={() => setGameType(type)}
+                                        disabled={isTournamentCreated}
+                                        id={`game-${type}`}
+                                    >
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="field">
+                            <span className="field-label">{t('setup.legs')}</span>
+                            <div className="segmented" role="group" aria-label={t('setup.legs')}>
+                                {LEG_OPTIONS.map((n) => (
+                                    <button
+                                        key={n}
+                                        type="button"
+                                        aria-pressed={(isTournamentCreated ? tournament.legsToWin : Number(legsToWin)) === n}
+                                        onClick={() => setLegsToWin(n)}
+                                        disabled={isTournamentCreated}
+                                        id={`legs-${n}`}
+                                    >
+                                        {legsLabel(n)}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: 24 }}>
+                            <div className="eyebrow" style={{ marginBottom: 4 }}>{t('setup.advanced')}</div>
+                            <Toggle label={t('setup.pin')} desc={t('setup.pin.desc')} checked={requirePin} onChange={setRequirePin} disabled={isTournamentCreated} />
+                            <Toggle label={t('setup.doubleOut')} desc={t('setup.doubleOut.desc')} checked={doubleOut} onChange={setDoubleOut} disabled={isTournamentCreated} />
+                            <Toggle label={t('setup.autoStart')} desc={t('setup.autoStart.desc')} checked={autoStartMatches} onChange={setAutoStartMatches} disabled={isTournamentCreated} />
+                            <Toggle label={t('setup.shuffle')} desc={t('setup.shuffle.desc')} checked={shufflePlayers} onChange={setShufflePlayers} disabled={isTournamentCreated} />
+                            <Toggle label={t('setup.prize')} desc={t('setup.prize.desc')} checked={enablePrizePool} onChange={setEnablePrizePool} disabled={isTournamentCreated} />
+
+                            {enablePrizePool && (
+                                <div className="prize-box">
+                                    <div className="field">
+                                        <label className="field-label" htmlFor="input-entry-fee">{t('setup.entryFee')}</label>
+                                        <input
+                                            className="input"
+                                            type="number"
+                                            min="0.50"
+                                            step="0.50"
+                                            placeholder="0.50"
+                                            id="input-entry-fee"
+                                            value={entryFee}
+                                            onChange={(e) => setEntryFee(e.target.value)}
+                                            disabled={isTournamentCreated}
+                                        />
+                                    </div>
+                                    <div className="field">
+                                        <label className="field-label" htmlFor="select-distribution">{t('setup.distribution')}</label>
+                                        <select
+                                            className="input"
+                                            value={distributionMode}
+                                            onChange={(e) => setDistributionMode(e.target.value)}
+                                            id="select-distribution"
+                                            disabled={isTournamentCreated}
+                                        >
+                                            <option value="winner_100">{t('setup.dist.winner')}</option>
+                                            <option value="split_70_30">{t('setup.dist.final')}</option>
+                                            <option value="split_50_30_20">{t('setup.dist.top4')}</option>
+                                            <option value="custom">{t('setup.dist.custom')}</option>
+                                        </select>
+                                    </div>
+                                    {distributionMode === 'custom' && (
+                                        <div className="field">
+                                            <span className="field-label">{t('setup.dist.customLabel')}</span>
+                                            <div className="split-grid">
+                                                {['setup.place1', 'setup.place2', 'setup.place34'].map((key, i) => (
+                                                    <label key={key} className="field">
+                                                        <span className="setting-desc">{t(key)}</span>
+                                                        <input
+                                                            type="number"
+                                                            className="input"
+                                                            min="0"
+                                                            max="100"
+                                                            value={customDist[i]}
+                                                            onChange={(e) => setCustomShare(i, e.target.value)}
+                                                            disabled={isTournamentCreated}
+                                                        />
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <span className="setting-desc" style={{ color: customSum === 100 ? 'var(--green)' : 'var(--red)', fontWeight: 700 }}>
+                                                {t('setup.sum', { sum: customSum })}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {!isTournamentCreated && (
+                            <button
+                                className="btn btn-primary btn-lg btn-block"
+                                onClick={handleCreateTournament}
+                                disabled={isLoading}
+                                style={{ marginTop: 24 }}
+                                id="btn-create-tournament"
+                            >
+                                {isLoading ? t('setup.creating') : t('setup.create')}
+                            </button>
+                        )}
+                    </div>
+                </section>
+
+                {/* Players */}
+                <section className="panel">
+                    <div className="panel-head">
+                        <span className="eyebrow">{t('setup.playersTitle')}</span>
+                        <span className="num" style={{ fontSize: 22 }}>{players.length}</span>
+                    </div>
+                    <div className="panel-body">
+                        {isTournamentCreated ? (
+                            <>
+                                <form onSubmit={handleAddPlayer} className="player-add-row">
                                     <input
                                         className="input"
                                         type="text"
@@ -409,74 +304,63 @@ export default function SetupPage({ tournament }) {
                                         id="input-player-name"
                                         autoFocus
                                     />
-                                    <button className="btn btn-primary" type="submit" id="btn-add-player" title={t('setup.addPlayer')} aria-label={t('setup.addPlayer')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <button className="btn btn-secondary" type="submit" id="btn-add-player" title={t('setup.addPlayer')} aria-label={t('setup.addPlayer')}>
                                         <Plus size={20} />
                                     </button>
-                                </div>
-                            </form>
+                                </form>
 
-                            <ul className="player-list">
-                                {players.map((player, idx) => (
-                                    <li key={player.id} className="player-item">
-                                        <div className="player-item-name">
-                                            <span className="player-item-number">{idx + 1}</span>
-                                            <span>{player.name}</span>
-                                        </div>
-                                        <button
-                                            className="player-remove-btn"
-                                            onClick={() => handleRemovePlayer(player.id)}
-                                            title={t('setup.removePlayer')}
-                                            aria-label={t('setup.removePlayer')}
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
+                                {players.length > 0 ? (
+                                    <ul className="player-list">
+                                        {players.map((player, idx) => (
+                                            <li key={player.id} className="player-item">
+                                                <span className="num player-item-number">{idx + 1}</span>
+                                                <span className="player-item-name">{player.name}</span>
+                                                <button
+                                                    className="player-remove-btn"
+                                                    onClick={() => handleRemovePlayer(player.id)}
+                                                    title={t('setup.removePlayer')}
+                                                    aria-label={t('setup.removePlayer')}
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="empty">{t('setup.noPlayers')}</p>
+                                )}
 
-                            {players.length === 0 && (
-                                <div className="text-center mt-2" style={{ padding: '2rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <div style={{ marginBottom: '0.75rem', opacity: 0.5 }}><Users size={40} /></div>
-                                    <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-                                        {t('setup.noPlayers')}
-                                    </p>
-                                </div>
-                            )}
+                                {players.length >= 2 && enablePrizePool && players.length < 4 && (distributionMode === 'split_50_30_20' || (distributionMode === 'custom' && customDist[2] > 0)) && (
+                                    <p className="note" style={{ marginTop: 16 }}>{t('setup.noSemiWarning')}</p>
+                                )}
 
-                            {players.length >= 2 && enablePrizePool && players.length < 4 && (distributionMode === 'split_50_30_20' || (distributionMode === 'custom' && customDist[2] > 0)) && (
-                                <div className="alert-error" style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
-                                    {t('setup.noSemiWarning')}
-                                </div>
-                            )}
+                                {tournament.settings?.entryFee > 0 && players.length > 0 && (
+                                    <div className="spread" style={{ marginTop: 16 }}>
+                                        <span className="muted">{t('tournament.prizePool')}</span>
+                                        <span className="num" style={{ fontSize: 24 }}>{money(tournament.settings.entryFee * players.length)}</span>
+                                    </div>
+                                )}
 
-                            {players.length >= 2 && (
-                                <button
-                                    className="btn btn-primary btn-lg"
-                                    onClick={handleStartTournament}
-                                    disabled={isLoading}
-                                    style={{ width: '100%', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isLoading ? 0.6 : 1 }}
-                                    id="btn-start-tournament"
-                                >
-                                    <Rocket size={20} /> {isLoading ? t('setup.starting') : t('setup.start', { count: players.length })}
-                                </button>
-                            )}
-
-                            {players.length > 0 && players.length < 2 && (
-                                <p className="text-muted text-center mt-2" style={{ fontSize: '0.85rem' }}>
-                                    {t('setup.minPlayers')}
-                                </p>
-                            )}
-                        </>
-                    ) : (
-                        <div className="text-center mt-2" style={{ padding: '3rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div style={{ marginBottom: '0.75rem', opacity: 0.4 }}><Settings size={40} /></div>
-                            <p className="text-muted">
-                                {t('setup.createFirst')}
-                            </p>
-                        </div>
-                    )}
-                </div>
+                                {players.length >= 2 ? (
+                                    <button
+                                        className="btn btn-primary btn-lg btn-block"
+                                        onClick={handleStartTournament}
+                                        disabled={isLoading}
+                                        style={{ marginTop: 20 }}
+                                        id="btn-start-tournament"
+                                    >
+                                        {isLoading ? t('setup.starting') : t('setup.start', { count: players.length })}
+                                        {!isLoading && <ArrowRight size={18} />}
+                                    </button>
+                                ) : (
+                                    <p className="setting-desc" style={{ marginTop: 16, textAlign: 'center' }}>{t('setup.minPlayers')}</p>
+                                )}
+                            </>
+                        ) : (
+                            <p className="empty">{t('setup.createFirst')}</p>
+                        )}
+                    </div>
+                </section>
             </div>
         </div>
     );
