@@ -51,9 +51,9 @@
   --radius-xl: 24px;
   --radius-full: 9999px;
 
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'Outfit', 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Outfit Variable', 'Outfit', 'Inter Variable', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
 
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
@@ -1928,6 +1928,44 @@ h3 {
   background: var(--accent-primary);
   color: #fff;
   box-shadow: 0 2px 8px rgba(var(--accent-primary-rgb), 0.4);
+}
+
+/* Language toggle (next to the theme switcher) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lang-btn {
+  height: 40px;
+  min-width: 40px;
+  padding: 0 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.lang-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+}
+
+.header-subtitle {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .header-subtitle {
+    display: none;
+  }
 }
 
 /* Animations */

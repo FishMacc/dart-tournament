@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Activity, CheckCircle, Target, Trophy, AlertTriangle } from 'lucide-react';
 import socket from '../socket.js';
+import { useI18n } from '../i18n.jsx';
 
 export default function LiveMatchPage({ tournament }) {
     const { matchId } = useParams();
     const navigate = useNavigate();
+    const { t } = useI18n();
     const [match, setMatch] = useState(null);
 
     // Find match from tournament state
@@ -42,7 +44,7 @@ export default function LiveMatchPage({ tournament }) {
     if (!match) {
         return (
             <div className="text-center animate-fade-in" style={{ paddingTop: '4rem' }}>
-                <p className="text-muted">Spiel wird geladen...</p>
+                <p className="text-muted">{t('live.loading')}</p>
             </div>
         );
     }
@@ -66,7 +68,7 @@ export default function LiveMatchPage({ tournament }) {
                     onClick={() => navigate(-1)}
                     id="btn-back"
                 >
-                    ← Zurück
+                    {t('live.back')}
                 </button>
 
                 {isActive && (
@@ -76,7 +78,7 @@ export default function LiveMatchPage({ tournament }) {
                 )}
                 {isFinished && (
                     <span className="badge badge-success" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <CheckCircle size={12} /> Beendet
+                        <CheckCircle size={12} /> {t('live.finished')}
                     </span>
                 )}
             </div>
@@ -90,16 +92,16 @@ export default function LiveMatchPage({ tournament }) {
                         {isFinished ? match.legs?.player1 : match.scores?.player1}
                     </div>
                     <div className="live-player-legs">
-                        {isFinished ? 'Legs' : `Legs: ${match.legs?.player1 || 0}`}
+                        {isFinished ? t('live.legs') : t('live.legsN', { n: match.legs?.player1 || 0 })}
                     </div>
                     {match.currentThrower === 'player1' && isActive && (
                         <div className="live-thrower-indicator" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-                            <Target size={14} /> Am Wurf
+                            <Target size={14} /> {t('live.throwing')}
                         </div>
                     )}
                     {isFinished && match.winner?.id === match.player1?.id && (
                         <div style={{ marginTop: '0.5rem', color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                            <Trophy size={20} /> Gewinner
+                            <Trophy size={20} /> {t('live.winner')}
                         </div>
                     )}
                 </div>
@@ -114,16 +116,16 @@ export default function LiveMatchPage({ tournament }) {
                         {isFinished ? match.legs?.player2 : match.scores?.player2}
                     </div>
                     <div className="live-player-legs">
-                        {isFinished ? 'Legs' : `Legs: ${match.legs?.player2 || 0}`}
+                        {isFinished ? t('live.legs') : t('live.legsN', { n: match.legs?.player2 || 0 })}
                     </div>
                     {match.currentThrower === 'player2' && isActive && (
                         <div className="live-thrower-indicator" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-                            <Target size={14} /> Am Wurf
+                            <Target size={14} /> {t('live.throwing')}
                         </div>
                     )}
                     {isFinished && match.winner?.id === match.player2?.id && (
                         <div style={{ marginTop: '0.5rem', color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                            <Trophy size={20} /> Gewinner
+                            <Trophy size={20} /> {t('live.winner')}
                         </div>
                     )}
                 </div>
@@ -143,7 +145,7 @@ export default function LiveMatchPage({ tournament }) {
                                 </span>
                             ))}
                             {recentThrowsP1.length === 0 && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Keine Würfe</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{t('live.noThrows')}</span>
                             )}
                         </div>
                     </div>
@@ -159,7 +161,7 @@ export default function LiveMatchPage({ tournament }) {
                                 </span>
                             ))}
                             {recentThrowsP2.length === 0 && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Keine Würfe</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{t('live.noThrows')}</span>
                             )}
                         </div>
                     </div>

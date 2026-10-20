@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Target, X, RotateCcw } from 'lucide-react';
+import { useI18n } from '../i18n.jsx';
 
 const NUMBERS = [
     1, 2, 3, 4, 5,
@@ -9,6 +10,7 @@ const NUMBERS = [
 ];
 
 export default function ScorePad({ onThrow, onUndo, disabled, canUndo }) {
+    const { t } = useI18n();
     const [multiplier, setMultiplier] = useState(1);
 
     const handleNumberClick = (num) => {
@@ -38,19 +40,19 @@ export default function ScorePad({ onThrow, onUndo, disabled, canUndo }) {
                     className={`multiplier-btn ${multiplier === 1 ? 'selected' : ''}`}
                     onClick={() => setMultiplier(1)}
                 >
-                    Single
+                    {t('pad.single')}
                 </button>
                 <button
                     className={`multiplier-btn ${multiplier === 2 ? 'selected' : ''}`}
                     onClick={() => setMultiplier(2)}
                 >
-                    Double
+                    {t('pad.double')}
                 </button>
                 <button
                     className={`multiplier-btn ${multiplier === 3 ? 'selected' : ''}`}
                     onClick={() => setMultiplier(3)}
                 >
-                    Triple
+                    {t('pad.triple')}
                 </button>
             </div>
 
@@ -81,7 +83,7 @@ export default function ScorePad({ onThrow, onUndo, disabled, canUndo }) {
                     disabled={disabled}
                     style={{ aspectRatio: 'auto', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                 >
-                    <Target size={20} /> Bull
+                    <Target size={20} /> {t('pad.bull')}
                 </button>
                 <button
                     className="number-btn miss"
@@ -89,7 +91,7 @@ export default function ScorePad({ onThrow, onUndo, disabled, canUndo }) {
                     disabled={disabled}
                     style={{ aspectRatio: 'auto', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                 >
-                    <X size={20} /> Miss
+                    <X size={20} /> {t('pad.miss')}
                 </button>
                 <button
                     className="btn btn-ghost"
@@ -101,7 +103,7 @@ export default function ScorePad({ onThrow, onUndo, disabled, canUndo }) {
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
                     }}
                 >
-                    <RotateCcw size={20} /> Undo
+                    <RotateCcw size={20} /> {t('pad.undo')}
                 </button>
             </div>
         </div>

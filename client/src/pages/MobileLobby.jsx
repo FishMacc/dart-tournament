@@ -1,15 +1,17 @@
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../i18n.jsx';
 
 export default function MobileLobby({ tournament }) {
     const navigate = useNavigate();
+    const { t, money } = useI18n();
 
     if (!tournament) {
         return (
             <div className="scoring-container animate-fade-in text-center" style={{ paddingTop: '4rem' }}>
                 <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.6 }}>🎯</div>
-                <h2>Warte auf Turnier...</h2>
+                <h2>{t('lobby.waitTournament')}</h2>
                 <p className="text-muted mt-1">
-                    Der Host muss zuerst ein Turnier erstellen und starten.
+                    {t('lobby.waitTournament.text')}
                 </p>
             </div>
         );
@@ -19,12 +21,12 @@ export default function MobileLobby({ tournament }) {
         return (
             <div className="scoring-container animate-fade-in text-center" style={{ paddingTop: '4rem' }}>
                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
-                <h2>Turnier wird eingerichtet</h2>
+                <h2>{t('lobby.setup')}</h2>
                 <p className="text-muted mt-1">
-                    Warte bis der Host das Turnier startet...
+                    {t('lobby.setup.text')}
                 </p>
                 <p className="mt-2 text-muted" style={{ fontSize: '0.85rem' }}>
-                    {tournament.players?.length || 0} Spieler bisher registriert
+                    {t('lobby.setup.players', { count: tournament.players?.length || 0 })}
                 </p>
             </div>
         );
@@ -34,9 +36,9 @@ export default function MobileLobby({ tournament }) {
         return (
             <div className="scoring-container animate-fade-in text-center" style={{ paddingTop: '4rem' }}>
                 <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🏆</div>
-                <h2>Turnier beendet!</h2>
+                <h2>{t('lobby.finished')}</h2>
                 <p className="mt-1" style={{ fontSize: '1.3rem', color: 'var(--accent-primary)' }}>
-                    Gewinner: <strong>{tournament.winner?.name}</strong>
+                    {t('lobby.winner')} <strong>{tournament.winner?.name}</strong>
                 </p>
                 {tournament.settings?.entryFee > 0 && (() => {
                     const pool = tournament.settings.entryFee * (tournament.players?.length || 0);
@@ -63,7 +65,7 @@ export default function MobileLobby({ tournament }) {
                     const winnerPrize = pool * (winnerShare / totalShares);
                     return (
                         <p className="mt-2" style={{ fontSize: '1.1rem', color: '#eab308', fontWeight: 700 }}>
-                            💰 {winnerPrize.toFixed(2)} € gewonnen!
+                            {t('lobby.won', { amount: money(winnerPrize) })}
                         </p>
                     );
                 })()}
@@ -106,7 +108,7 @@ export default function MobileLobby({ tournament }) {
                     </span>
                 </h2>
                 <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-                    {tournament.type} • {tournament.players?.length} Spieler
+                    {tournament.type} • {t('lobby.players', { count: tournament.players?.length || 0 })}
                     {tournament.name && ` • ${tournament.name}`}
                 </p>
 
@@ -125,9 +127,9 @@ export default function MobileLobby({ tournament }) {
                             fontWeight: 700,
                             fontSize: '0.9rem',
                         }}>
-                            <span>💰 Preispool:</span>
+                            <span>{t('tournament.prizePool')}</span>
                             <span style={{ fontSize: '1.1rem' }}>
-                                {(tournament.settings.entryFee * (tournament.players?.length || 0)).toFixed(2)} €
+                                {money(tournament.settings.entryFee * (tournament.players?.length || 0))}
                             </span>
                         </div>
                     </div>
@@ -143,26 +145,26 @@ export default function MobileLobby({ tournament }) {
                             if (pool === 0) return null;
 
                             if (mode === 'winner_100') {
-                                return <span>1.: {pool.toFixed(2)}€</span>;
+                                return <span>1.: {money(pool)}</span>;
                             } else if (mode === 'split_70_30') {
                                 return (
                                     <span>
-                                        1.: {(pool * 0.7).toFixed(2)}€ • 2.: {(pool * 0.3).toFixed(2)}€
+                                        1.: {money(pool * 0.7)} • 2.: {money(pool * 0.3)}
                                     </span>
                                 );
                             } else if (mode === 'split_50_30_20') {
                                 return (
                                     <span>
-                                        1.: {(pool * 0.5).toFixed(2)}€ • 2.: {(pool * 0.3).toFixed(2)}€ • 3./4.: {(pool * 0.2).toFixed(2)}€
+                                        1.: {money(pool * 0.5)} • 2.: {money(pool * 0.3)} • 3./4.: {money(pool * 0.2)}
                                     </span>
                                 );
                             } else if (mode === 'custom' && tournament.settings.distributionValues) {
                                 const vals = tournament.settings.distributionValues;
                                 return (
                                     <span>
-                                        {vals[0] > 0 && `1.: ${(pool * vals[0] / 100).toFixed(2)}€`}
-                                        {vals[1] > 0 && ` • 2.: ${(pool * vals[1] / 100).toFixed(2)}€`}
-                                        {vals[2] > 0 && ` • 3./4.: ${(pool * vals[2] / 100).toFixed(2)}€`}
+                                        {vals[0] > 0 && `1.: ${money(pool * vals[0] / 100)}`}
+                                        {vals[1] > 0 && ` • 2.: ${money(pool * vals[1] / 100)}`}
+                                        {vals[2] > 0 && ` • 3./4.: ${money(pool * vals[2] / 100)}`}
                                     </span>
                                 );
                             }
@@ -176,7 +178,7 @@ export default function MobileLobby({ tournament }) {
                 <div className="mb-2">
                     <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span className="badge badge-live" style={{ fontSize: '0.7rem' }}>LIVE</span>
-                        Aktive Spiele
+                        {t('lobby.activeMatches')}
                     </h3>
                     <div className="match-list">
                         {activeMatches.map((match) => (
@@ -195,14 +197,14 @@ export default function MobileLobby({ tournament }) {
                                         style={{ flex: 1 }}
                                         onClick={() => handleGoToMatch(match.id)}
                                     >
-                                        🎯 Punkte eintragen
+                                        {t('lobby.score')}
                                     </button>
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         style={{ flex: 1 }}
                                         onClick={() => handleWatchLive(match.id)}
                                     >
-                                        👁 Zuschauen
+                                        {t('lobby.watch')}
                                     </button>
                                 </div>
                             </div>
@@ -214,7 +216,7 @@ export default function MobileLobby({ tournament }) {
             {/* Waiting Matches */}
             {waitingMatches.length > 0 && (
                 <div className="mb-2">
-                    <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>⏳ Wartende Spiele</h3>
+                    <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>{t('lobby.waitingMatches')}</h3>
                     <div className="match-list">
                         {waitingMatches.map((match) => (
                             <div
@@ -228,7 +230,7 @@ export default function MobileLobby({ tournament }) {
                                     <span className="match-card-vs">VS</span>
                                     <span style={{ fontWeight: 600 }}>{match.player2?.name || 'TBD'}</span>
                                 </div>
-                                <span className="badge badge-warning">Bereit</span>
+                                <span className="badge badge-warning">{t('lobby.ready')}</span>
                             </div>
                         ))}
                     </div>
@@ -238,7 +240,7 @@ export default function MobileLobby({ tournament }) {
             {/* Finished Matches */}
             {finishedMatches.length > 0 && (
                 <div className="mb-2">
-                    <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>✅ Beendete Spiele</h3>
+                    <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>{t('lobby.finishedMatches')}</h3>
                     <div className="match-list">
                         {finishedMatches.slice(-4).map((match) => (
                             <div
@@ -262,9 +264,9 @@ export default function MobileLobby({ tournament }) {
             {activeMatches.length === 0 && waitingMatches.length === 0 && (
                 <div className="text-center mt-4">
                     <div style={{ fontSize: '2rem', marginBottom: '0.75rem', opacity: 0.4 }}>🎯</div>
-                    <p className="text-muted">Keine Spiele verfügbar gerade.</p>
+                    <p className="text-muted">{t('lobby.none')}</p>
                     <p className="text-muted" style={{ fontSize: '0.85rem' }}>
-                        Warte auf die nächste Runde...
+                        {t('lobby.none.text')}
                     </p>
                 </div>
             )}

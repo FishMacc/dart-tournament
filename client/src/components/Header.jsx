@@ -1,25 +1,27 @@
 import { useNavigate } from 'react-router-dom';
-import { Moon, Zap, Coffee, Activity, Settings, CheckCircle, Volume2, VolumeX } from 'lucide-react';
+import { Moon, Zap, Coffee, Activity, Settings, CheckCircle } from 'lucide-react';
+import { useI18n } from '../i18n.jsx';
 
 export default function Header({ tournament, theme, setTheme }) {
     const navigate = useNavigate();
+    const { t, lang, setLang } = useI18n();
 
     const getStatusBadge = () => {
         if (!tournament) return null;
         switch (tournament.status) {
             case 'setup': return (
                 <span className="badge badge-warning" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Settings size={12} /> Setup
+                    <Settings size={12} /> {t('header.status.setup')}
                 </span>
             );
             case 'active': return (
                 <span className="badge badge-live" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Activity size={12} /> Live
+                    <Activity size={12} /> {t('header.status.active')}
                 </span>
             );
             case 'finished': return (
                 <span className="badge badge-finished" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <CheckCircle size={12} /> Beendet
+                    <CheckCircle size={12} /> {t('header.status.finished')}
                 </span>
             );
             default: return null;
@@ -34,7 +36,7 @@ export default function Header({ tournament, theme, setTheme }) {
                     <img src="/logo.svg" alt="DartVault Logo" width="32" height="32" className="animate-spin-slow" />
                     <div style={{ lineHeight: 1 }}>
                         <h1 className="header-title">DartVault</h1>
-                        <div style={{ fontSize: '0.7rem', opacity: 0.6, letterSpacing: '0.1em' }}>TOURNAMENT MANAGER</div>
+                        <div className="header-subtitle" style={{ fontSize: '0.7rem', opacity: 0.6, letterSpacing: '0.1em' }}>TOURNAMENT MANAGER</div>
                     </div>
                 </div>
 
@@ -57,25 +59,34 @@ export default function Header({ tournament, theme, setTheme }) {
                         <button
                             className={`theme-btn ${theme === 'obsidian' ? 'active' : ''}`}
                             onClick={() => setTheme('obsidian')}
-                            title="Obsidian (Dark)"
+                            title={t('header.theme.obsidian')}
                         >
                             <Moon size={16} />
                         </button>
                         <button
                             className={`theme-btn ${theme === 'neon' ? 'active' : ''}`}
                             onClick={() => setTheme('neon')}
-                            title="Neon"
+                            title={t('header.theme.neon')}
                         >
                             <Zap size={16} />
                         </button>
                         <button
                             className={`theme-btn ${theme === 'classic' ? 'active' : ''}`}
                             onClick={() => setTheme('classic')}
-                            title="Classic"
+                            title={t('header.theme.classic')}
                         >
                             <Coffee size={16} />
                         </button>
                     </div>
+                    <button
+                        className="lang-btn"
+                        onClick={() => setLang(lang === 'en' ? 'de' : 'en')}
+                        title={t('header.language')}
+                        aria-label={t('header.language')}
+                        id="btn-language"
+                    >
+                        {lang.toUpperCase()}
+                    </button>
                 </div>
             </div>
         </header>

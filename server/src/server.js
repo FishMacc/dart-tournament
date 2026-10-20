@@ -82,8 +82,8 @@ if (clientBuildPath) {
 
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-        console.error(`\n❌ Port ${PORT} wird bereits verwendet.`);
-        console.error('   Läuft der Server schon in einem anderen Fenster? Sonst mit anderem Port starten, z.B.:');
+        console.error(`\n❌ Port ${PORT} is already in use.`);
+        console.error('   Is the server already running in another window? Otherwise start it on another port, e.g.:');
         console.error(`   PORT=3001 npm start   (Windows: set PORT=3001 && npm start)\n`);
         process.exit(1);
     }
@@ -96,14 +96,14 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('🎯 ═══════════════════════════════════════════');
     console.log('   DART TOURNAMENT SERVER');
     console.log('═══════════════════════════════════════════════');
-    console.log(`   Host (dieser PC):  http://localhost:${PORT}`);
-    console.log(`   Handys (Scoring):  http://${ip}:${PORT}/mobile`);
-    console.log(`   Admin von anderem Gerät: http://${ip}:${PORT}/?admin=${getAdminKey()}`);
+    console.log(`   Host (this PC):        http://localhost:${PORT}`);
+    console.log(`   Phones (scoring):      http://${ip}:${PORT}/mobile`);
+    console.log(`   Admin on other device: http://${ip}:${PORT}/?admin=${getAdminKey()}`);
     console.log('═══════════════════════════════════════════════');
     if (!clientBuildPath) {
-        console.log('   ⚠️  Client nicht gebaut – bitte "npm run build" ausführen.');
+        console.log('   ⚠️  Client not built yet - run "npm run build" first.');
     }
-    console.log('   Fenster offen lassen! Beenden mit Strg+C.');
+    console.log('   Keep this window open! Stop with Ctrl+C.');
     console.log('');
 });
 

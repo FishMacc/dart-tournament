@@ -2,12 +2,19 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
+import { I18nProvider } from './i18n.jsx';
+// Fonts are bundled so the app looks right without internet at the venue
+import '@fontsource-variable/inter';
+import '@fontsource-variable/outfit';
+import '@fontsource-variable/jetbrains-mono';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <BrowserRouter>
-            <App />
-        </BrowserRouter>
+        <I18nProvider>
+            <BrowserRouter>
+                <App />
+            </BrowserRouter>
+        </I18nProvider>
     </React.StrictMode>
 );

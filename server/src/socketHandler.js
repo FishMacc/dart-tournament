@@ -20,8 +20,8 @@ import { undoLastThrow } from './tournamentManager_undo.js';
 import { getCheckoutSuggestion } from './gameLogic.js';
 import { isHostHandshake } from './hostAuth.js';
 
-const NOT_HOST = 'Nur der Turnier-Host darf das tun.';
-const NOT_AUTHORIZED = 'Nicht autorisiert! Bitte PIN eingeben.';
+const NOT_HOST = 'Only the tournament host can do that.';
+const NOT_AUTHORIZED = 'Not authorized - please enter the match PIN.';
 
 /**
  * Setup Socket.io event handlers.
@@ -50,7 +50,7 @@ export function setupSocket(io) {
                 const callback = typeof args[args.length - 1] === 'function' ? args.pop() : () => { };
                 const payload = args[0] && typeof args[0] === 'object' ? args[0] : {};
                 if (hostOnly && !isHost) {
-                    callback({ success: false, error: NOT_HOST });
+                    callback({ success: false, code: 'NOT_HOST', error: NOT_HOST });
                     return;
                 }
                 try {

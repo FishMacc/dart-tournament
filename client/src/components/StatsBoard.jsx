@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Trophy, Target, Award, ListFilter, ArrowUpDown, TrendingUp, Hash, ArrowUpCircle } from 'lucide-react';
+import { Trophy, ListFilter, ArrowUpDown, TrendingUp, Hash, ArrowUpCircle } from 'lucide-react';
+import { useI18n } from '../i18n.jsx';
 
 export default function StatsBoard({ tournament }) {
+    const { t, money } = useI18n();
     const [sortField, setSortField] = useState('wins');
     const [sortDirection, setSortDirection] = useState('desc');
     const [filterName, setFilterName] = useState('');
@@ -261,14 +263,15 @@ export default function StatsBoard({ tournament }) {
             <div className="stats-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
                     <Trophy className="text-accent" size={28} />
-                    <span>Turnierstatistik</span>
+                    <span>{t('stats.title')}</span>
                 </h2>
 
                 <div style={{ position: 'relative' }}>
                     <ListFilter size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
                     <input
                         type="text"
-                        placeholder="Spieler suchen..."
+                        placeholder={t('stats.search')}
+                        aria-label={t('stats.search')}
                         value={filterName}
                         onChange={e => setFilterName(e.target.value)}
                         className="input"
@@ -283,40 +286,40 @@ export default function StatsBoard({ tournament }) {
                         <tr>
                             <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    Name <SortIcon field="name" />
+                                    {t('stats.name')} <SortIcon field="name" />
                                 </div>
                             </th>
                             <th onClick={() => handleSort('matchesPlayed')} style={{ cursor: 'pointer', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    Spiele <SortIcon field="matchesPlayed" />
+                                    {t('stats.matches')} <SortIcon field="matchesPlayed" />
                                 </div>
                             </th>
                             <th onClick={() => handleSort('wins')} style={{ cursor: 'pointer', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    Siege <SortIcon field="wins" />
+                                    {t('stats.wins')} <SortIcon field="wins" />
                                 </div>
                             </th>
                             <th onClick={() => handleSort('legsWon')} style={{ cursor: 'pointer', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    Legs <SortIcon field="legsWon" />
+                                    {t('stats.legs')} <SortIcon field="legsWon" />
                                 </div>
                             </th>
                             <th onClick={() => handleSort('average')} style={{ cursor: 'pointer', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    Avg (3) <SortIcon field="average" />
+                                    {t('stats.avg')} <SortIcon field="average" />
                                 </div>
                             </th>
                             <th onClick={() => handleSort('bestLeg')} style={{ cursor: 'pointer', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    Best Leg <SortIcon field="bestLeg" />
+                                    {t('stats.bestLeg')} <SortIcon field="bestLeg" />
                                 </div>
                             </th>
                             <th onClick={() => handleSort('highFinish')} style={{ cursor: 'pointer', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                    Hi-Fin <SortIcon field="highFinish" />
+                                    {t('stats.hiFin')} <SortIcon field="highFinish" />
                                 </div>
                             </th>
-                            {tournament.settings?.entryFee > 0 && <th style={{ textAlign: 'center' }}>Preisgeld</th>}
+                            {tournament.settings?.entryFee > 0 && <th style={{ textAlign: 'center' }}>{t('stats.prize')}</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -324,7 +327,7 @@ export default function StatsBoard({ tournament }) {
                             <tr key={player.id} className="stats-row animate-scale-in">
                                 <td style={{ padding: '1rem', background: 'var(--bg-card)', borderRadius: '8px 0 0 8px', fontWeight: 600 }}>
                                     {player.name}
-                                    {tournament.winner?.id === player.id && <span className="badge badge-success" style={{ marginLeft: '0.75rem', fontSize: '0.7rem' }}>CHAMPION</span>}
+                                    {tournament.winner?.id === player.id && <span className="badge badge-success" style={{ marginLeft: '0.75rem', fontSize: '0.7rem' }}>{t('stats.champion')}</span>}
                                 </td>
                                 <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)' }}>{player.matchesPlayed}</td>
                                 <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)', color: 'var(--accent-success)' }}>{player.wins}</td>
@@ -338,7 +341,7 @@ export default function StatsBoard({ tournament }) {
 
                                 {/* Best Leg */}
                                 <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)' }}>
-                                    {player.bestLeg} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Darts</span>
+                                    {player.bestLeg}{player.bestLeg !== '-' && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}> {t('stats.darts')}</span>}
                                     {player.isBestLeg && <Hash size={14} className="text-accent" style={{ marginLeft: '0.25rem', verticalAlign: 'middle' }} />}
                                 </td>
 
@@ -349,7 +352,7 @@ export default function StatsBoard({ tournament }) {
                                 </td>
                                 {tournament.settings?.entryFee > 0 && (
                                     <td style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card)', borderRadius: '0 8px 8px 0', fontWeight: 700, color: '#eab308' }}>
-                                        {payoutMap[player.id] ? `${payoutMap[player.id].toFixed(2)}€` : '-'}
+                                        {payoutMap[player.id] ? money(payoutMap[player.id]) : '-'}
                                     </td>
                                 )}
                             </tr>
@@ -362,7 +365,7 @@ export default function StatsBoard({ tournament }) {
             {tournament.winner && (
                 <div className="winner-spotlight card gradient-card animate-bounce-in" style={{ marginTop: '2rem', textAlign: 'center', padding: '3rem' }}>
                     <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👑</div>
-                    <h3 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Der Sieger ist</h3>
+                    <h3 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{t('stats.winnerIs')}</h3>
                     <h1 style={{
                         fontSize: '3.5rem',
                         background: 'linear-gradient(45deg, #FFD700, #FFA500)',
@@ -373,7 +376,7 @@ export default function StatsBoard({ tournament }) {
                     }}>
                         {tournament.winner.name}
                     </h1>
-                    <p className="text-muted">Turnier: {tournament.name || tournament.type}</p>
+                    <p className="text-muted">{t('stats.tournament', { name: tournament.name || tournament.type })}</p>
                 </div>
             )}
         </div>

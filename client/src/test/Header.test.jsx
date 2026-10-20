@@ -21,7 +21,7 @@ describe('Header', () => {
         );
         expect(screen.queryByText('Setup')).not.toBeInTheDocument();
         expect(screen.queryByText('Live')).not.toBeInTheDocument();
-        expect(screen.queryByText('Beendet')).not.toBeInTheDocument();
+        expect(screen.queryByText('Finished')).not.toBeInTheDocument();
     });
 
     it('should show "Setup" when tournament is in setup', () => {
@@ -42,13 +42,13 @@ describe('Header', () => {
         expect(screen.getByText('Live')).toBeInTheDocument();
     });
 
-    it('should show "Beendet" when tournament is finished', () => {
+    it('should show "Finished" when tournament is finished', () => {
         render(
             <MemoryRouter>
                 <Header tournament={{ status: 'finished' }} theme="obsidian" setTheme={() => { }} />
             </MemoryRouter>
         );
-        expect(screen.getByText('Beendet')).toBeInTheDocument();
+        expect(screen.getByText('Finished')).toBeInTheDocument();
     });
 
     it('should render theme switcher buttons', () => {
@@ -64,10 +64,10 @@ describe('Header', () => {
     it('should display tournament name when active', () => {
         render(
             <MemoryRouter>
-                <Header tournament={{ status: 'active', name: 'Freitagsturnier', type: '501' }} theme="obsidian" setTheme={() => { }} />
+                <Header tournament={{ status: 'active', name: 'Friday Cup', type: '501' }} theme="obsidian" setTheme={() => { }} />
             </MemoryRouter>
         );
-        expect(screen.getByText('Freitagsturnier')).toBeInTheDocument();
+        expect(screen.getByText('Friday Cup')).toBeInTheDocument();
     });
 
     it('should display tournament type when no name', () => {

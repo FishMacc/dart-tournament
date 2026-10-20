@@ -1,11 +1,14 @@
+import { useI18n } from '../i18n.jsx';
+
 export default function Bracket({ rounds, onWatchLive }) {
+    const { t } = useI18n();
     if (!rounds || rounds.length === 0) return null;
 
     const getRoundName = (roundIndex, totalRounds) => {
-        if (roundIndex === totalRounds - 1) return 'Finale';
-        if (roundIndex === totalRounds - 2) return 'Halbfinale';
-        if (roundIndex === totalRounds - 3) return 'Viertelfinale';
-        return `Runde ${roundIndex + 1}`;
+        if (roundIndex === totalRounds - 1) return t('bracket.final');
+        if (roundIndex === totalRounds - 2) return t('bracket.semi');
+        if (roundIndex === totalRounds - 3) return t('bracket.quarter');
+        return t('bracket.round', { n: roundIndex + 1 });
     };
 
     return (
@@ -29,7 +32,7 @@ export default function Bracket({ rounds, onWatchLive }) {
                                         style={{ opacity: 0.4 }}
                                     >
                                         <div className="bracket-match-player">
-                                            <span>{match.winner?.name || 'Freilos'}</span>
+                                            <span>{match.winner?.name || t('bracket.bye')}</span>
                                             <span className="bracket-match-score" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>BYE</span>
                                         </div>
                                     </div>

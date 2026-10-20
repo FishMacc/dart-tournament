@@ -2,6 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import socket from '../socket.js';
 import ScorePad from '../components/ScorePad.jsx';
+import { useI18n } from '../i18n.jsx';
+
+function ErrorFallback({ error }) {
+    const { t } = useI18n();
+    return (
+        <div style={{ padding: '2rem', color: 'white', textAlign: 'center' }}>
+            <h2>{t('scoring.error')}</h2>
+            <p className="text-muted mt-1">{t('scoring.error.text')}</p>
+            <pre style={{ textAlign: 'left', background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', overflow: 'auto', marginTop: '1rem', fontSize: '0.8rem' }}>
+                {error?.toString()}
+            </pre>
+            <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
+                {t('scoring.reload')}
+            </button>
+        </div>
+    );
+}
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -18,20 +35,7 @@ class ErrorBoundary extends React.Component {
     }
 
     render() {
-        if (this.state.hasError) {
-            return (
-                <div style={{ padding: '2rem', color: 'white', textAlign: 'center' }}>
-                    <h2>⚠️ Ein Fehler ist aufgetreten</h2>
-                    <p className="text-muted mt-1">Bitte lade die Seite neu.</p>
-                    <pre style={{ textAlign: 'left', background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', overflow: 'auto', marginTop: '1rem', fontSize: '0.8rem' }}>
-                        {this.state.error?.toString()}
-                    </pre>
-                    <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
-                        Neuladen
-                    </button>
-                </div>
-            );
-        }
+        if (this.state.hasError) return <ErrorFallback error={this.state.error} />;
         return this.props.children;
     }
 }
@@ -47,6 +51,7 @@ export default function MobileScoring(props) {
 function MobileScoringContent({ tournament, isHost }) {
     const { matchId } = useParams();
     const navigate = useNavigate();
+    const { t, errorText } = useI18n();
 
     const [match, setMatch] = useState(null);
     const [lastThrow, setLastThrow] = useState(null);
@@ -119,7 +124,7 @@ function MobileScoringContent({ tournament, isHost }) {
                 setAuthorized(true);
                 setPinError('');
             } else {
-                setPinError('Falscher PIN! Bitte erneut versuchen.');
+                setPinError(t('scoring.wrongPin'));
                 setPinInput('');
             }
         });
@@ -127,7 +132,7 @@ function MobileScoringContent({ tournament, isHost }) {
 
     const handleStartMatch = () => {
         socket.emit('start_match', { matchId }, (res) => {
-            if (!res.success) setPinError(res.error);
+            if (!res.success) setPinError(errorText(res));
         });
     };
 
@@ -146,10 +151,10 @@ function MobileScoringContent({ tournament, isHost }) {
                 setCheckout(res.checkout);
             } else if (res.code === 'UNAUTHORIZED') {
                 sessionStorage.removeItem(pinStorageKey);
-                setPinError(res.error);
+                setPinError(errorText(res));
                 setAuthorized(false);
             } else if (res.error) {
-                alert(res.error);
+                alert(errorText(res));
             }
         });
     };
@@ -159,7 +164,7 @@ function MobileScoringContent({ tournament, isHost }) {
         return (
             <div className="scoring-container animate-fade-in text-center" style={{ paddingTop: '4rem' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '1rem', opacity: 0.5 }}>🎯</div>
-                <p className="text-muted">Spiel wird geladen...</p>
+                <p className="text-muted">{t('scoring.loading')}</p>
             </div>
         );
     }
@@ -169,16 +174,16 @@ function MobileScoringContent({ tournament, isHost }) {
         return (
             <div className="scoring-container animate-fade-in text-center" style={{ paddingTop: '4rem' }}>
                 <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🎉</div>
-                <h2>Spiel beendet!</h2>
+                <h2>{t('scoring.finished')}</h2>
                 <p className="mt-1" style={{ fontSize: '1.3rem', color: 'var(--accent-primary)' }}>
-                    Gewinner: <strong>{match.winner?.name}</strong>
+                    {t('scoring.winner')} <strong>{match.winner?.name}</strong>
                 </p>
                 <button
                     className="btn btn-secondary mt-3"
                     onClick={() => navigate('/mobile')}
                     id="btn-back-to-lobby"
                 >
-                    ← Zurück zur Übersicht
+                    {t('scoring.backToLobby')}
                 </button>
             </div>
         );
@@ -190,7 +195,7 @@ function MobileScoringContent({ tournament, isHost }) {
             // Should auto-authorize, show loading
             return (
                 <div className="scoring-container animate-fade-in text-center" style={{ paddingTop: '4rem' }}>
-                    <p className="text-muted">Verbindung wird hergestellt...</p>
+                    <p className="text-muted">{t('scoring.connecting')}</p>
                 </div>
             );
         }
@@ -199,12 +204,12 @@ function MobileScoringContent({ tournament, isHost }) {
             <div className="scoring-container animate-fade-in" style={{ paddingTop: '3rem' }}>
                 <div className="text-center mb-2">
                     <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔒</div>
-                    <h2>Match-PIN eingeben</h2>
+                    <h2>{t('scoring.enterPin')}</h2>
                     <p className="text-muted mt-1" style={{ fontSize: '0.9rem' }}>
                         {match.player1?.name} vs {match.player2?.name}
                     </p>
                     <p className="text-muted" style={{ fontSize: '0.8rem' }}>
-                        Der PIN wird auf dem Host-Bildschirm angezeigt
+                        {t('scoring.pinHint')}
                     </p>
                 </div>
 
@@ -244,7 +249,7 @@ function MobileScoringContent({ tournament, isHost }) {
                         disabled={pinInput.length !== 4}
                         id="btn-verify-pin"
                     >
-                        Bestätigen
+                        {t('scoring.confirm')}
                     </button>
                 </form>
 
@@ -254,7 +259,7 @@ function MobileScoringContent({ tournament, isHost }) {
                         onClick={() => navigate('/mobile')}
                         style={{ width: '100%' }}
                     >
-                        ← Zurück
+                        {t('scoring.back')}
                     </button>
                 </div>
             </div>
@@ -302,6 +307,7 @@ function MobileScoringContent({ tournament, isHost }) {
                     className="btn btn-ghost btn-sm"
                     onClick={() => navigate('/mobile')}
                     style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
+                    aria-label={t('scoring.back')}
                 >
                     ←
                 </button>
@@ -316,6 +322,7 @@ function MobileScoringContent({ tournament, isHost }) {
                     className="btn btn-ghost btn-sm"
                     onClick={() => setShowSettings(true)}
                     style={{ fontSize: '1.1rem', padding: '0.4rem 0.6rem', lineHeight: 1 }}
+                    aria-label={t('scoring.settings')}
                 >
                     ⚙️
                 </button>
@@ -325,14 +332,14 @@ function MobileScoringContent({ tournament, isHost }) {
             {showSettings && (
                 <div className="modal-overlay" onClick={() => setShowSettings(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h3 className="mb-2">⚙️ Einstellungen</h3>
+                        <h3 className="mb-2">{t('scoring.settings')}</h3>
                         <div className="setting-row" style={{
                             borderBottom: '1px solid var(--border-color)',
                             paddingBottom: '0.75rem',
                         }}>
                             <div className="setting-info">
-                                <span className="setting-label">Checkout-Hinweise</span>
-                                <span className="setting-desc">Vorschläge für Finish anzeigen</span>
+                                <span className="setting-label">{t('scoring.checkoutHints')}</span>
+                                <span className="setting-desc">{t('scoring.checkoutHints.desc')}</span>
                             </div>
                             <label className="toggle-switch">
                                 <input
@@ -348,7 +355,7 @@ function MobileScoringContent({ tournament, isHost }) {
                             style={{ width: '100%' }}
                             onClick={() => setShowSettings(false)}
                         >
-                            Fertig
+                            {t('scoring.done')}
                         </button>
                     </div>
                 </div>
@@ -389,7 +396,7 @@ function MobileScoringContent({ tournament, isHost }) {
                                     padding: '2px 10px', borderRadius: 'var(--radius-full)',
                                     textTransform: 'uppercase', letterSpacing: '0.08em',
                                 }}>
-                                    Am Wurf
+                                    {t('scoring.throwing')}
                                 </div>
                             )}
                             <div style={{
@@ -413,7 +420,7 @@ function MobileScoringContent({ tournament, isHost }) {
                                     fontSize: '0.7rem', color: 'var(--text-muted)',
                                     marginTop: '0.15rem',
                                 }}>
-                                    Legs: {legs}
+                                    {t('scoring.legs', { n: legs })}
                                 </div>
                             )}
                             {isActive && showCheckoutHints && checkout && (
@@ -445,7 +452,7 @@ function MobileScoringContent({ tournament, isHost }) {
                         fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)',
                         textTransform: 'uppercase', letterSpacing: '0.06em',
                     }}>
-                        🎯 {currentThrowerName} — Runde
+                        🎯 {t('scoring.turn', { name: currentThrowerName })}
                     </span>
                     {turnCount > 0 && (
                         <span style={{
@@ -502,7 +509,7 @@ function MobileScoringContent({ tournament, isHost }) {
                                     marginBottom: '0.15rem',
                                     letterSpacing: '0.06em',
                                 }}>
-                                    Dart {i + 1}
+                                    {t('scoring.dart', { n: i + 1 })}
                                 </div>
 
                                 <div style={{
@@ -530,7 +537,7 @@ function MobileScoringContent({ tournament, isHost }) {
                                         fontFamily: 'var(--font-mono)',
                                         marginTop: '0.1rem',
                                     }}>
-                                        {slot.score} pts
+                                        {t('scoring.pts', { n: slot.score })}
                                     </div>
                                 )}
                                 {slot.isBust && (
@@ -560,9 +567,9 @@ function MobileScoringContent({ tournament, isHost }) {
 
             {match.status === 'waiting' && (
                 <div className="card text-center" style={{ padding: '1.25rem', marginBottom: '0.75rem' }}>
-                    <p className="text-muted" style={{ marginBottom: '0.75rem' }}>Das Spiel ist bereit.</p>
+                    <p className="text-muted" style={{ marginBottom: '0.75rem' }}>{t('scoring.ready')}</p>
                     <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={handleStartMatch} id="btn-mobile-start-match">
-                        ▶ Spiel starten
+                        {t('scoring.start')}
                     </button>
                     {pinError && <div className="alert-error" style={{ marginTop: '0.75rem' }}>{pinError}</div>}
                 </div>
@@ -575,9 +582,9 @@ function MobileScoringContent({ tournament, isHost }) {
                     socket.emit('undo_throw', { matchId }, (res) => {
                         if (res.code === 'UNAUTHORIZED') {
                             sessionStorage.removeItem(pinStorageKey);
-                            setPinError(res.error);
+                            setPinError(errorText(res));
                             setAuthorized(false);
-                        } else if (!res.success) alert(res.error);
+                        } else if (!res.success) alert(errorText(res));
                         else {
                             setLastThrow(null);
                             setCheckout(res.checkout);

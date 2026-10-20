@@ -15,7 +15,7 @@ const openBrowser = !process.argv.includes('--no-browser') && !process.env.NO_BR
 
 const [major] = process.versions.node.split('.').map(Number);
 if (major < 18) {
-    console.error(`❌ Node.js ${process.versions.node} ist zu alt. Bitte Node.js 18 oder neuer installieren: https://nodejs.org`);
+    console.error(`❌ Node.js ${process.versions.node} is too old. Please install Node.js 18 or newer: https://nodejs.org`);
     process.exit(1);
 }
 
@@ -23,7 +23,7 @@ function run(args, cwd) {
     console.log(`\n▶ npm ${args.join(' ')}  (${path.relative(root, cwd) || '.'})`);
     const result = spawnSync('npm', args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' });
     if (result.status !== 0) {
-        console.error(`❌ "npm ${args.join(' ')}" fehlgeschlagen.`);
+        console.error(`❌ "npm ${args.join(' ')}" failed.`);
         process.exit(result.status || 1);
     }
 }
@@ -44,17 +44,17 @@ function clientNeedsBuild() {
 }
 
 if (!fs.existsSync(path.join(serverDir, 'node_modules'))) {
-    console.log('📦 Erster Start: installiere Server-Abhängigkeiten...');
+    console.log('📦 First start: installing server dependencies...');
     run(['install', '--omit=dev'], serverDir);
 }
 
 // Portable releases ship a prebuilt client in server/public and no client folder
 if (fs.existsSync(path.join(clientDir, 'package.json')) && clientNeedsBuild()) {
     if (!fs.existsSync(path.join(clientDir, 'node_modules'))) {
-        console.log('📦 Installiere Client-Abhängigkeiten...');
+        console.log('📦 Installing client dependencies...');
         run(['install'], clientDir);
     }
-    console.log('🔨 Baue die Web-Oberfläche...');
+    console.log('🔨 Building the web app...');
     run(['run', 'build'], clientDir);
 }
 
@@ -88,7 +88,7 @@ if (openBrowser) {
             ? ['cmd', ['/c', 'start', '', url]]
             : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
         const opener = spawn(cmd, args, { stdio: 'ignore', detached: true });
-        opener.on('error', () => console.log(`   Browser bitte manuell öffnen: ${url}`));
+        opener.on('error', () => console.log(`   Please open your browser at: ${url}`));
         opener.unref();
     }
 }

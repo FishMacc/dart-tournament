@@ -31,8 +31,8 @@ describe('Bracket', () => {
             [makeMockMatch(null, null)],
         ];
         render(<Bracket rounds={rounds} />);
-        expect(screen.getByText('Halbfinale')).toBeInTheDocument();
-        expect(screen.getByText('Finale')).toBeInTheDocument();
+        expect(screen.getByText('Semi-final')).toBeInTheDocument();
+        expect(screen.getByText('Final')).toBeInTheDocument();
     });
 
     it('should render round names correctly for 3 rounds', () => {
@@ -42,12 +42,12 @@ describe('Bracket', () => {
             [makeMockMatch(null, null)],
         ];
         render(<Bracket rounds={rounds} />);
-        expect(screen.getByText('Viertelfinale')).toBeInTheDocument();
-        expect(screen.getByText('Halbfinale')).toBeInTheDocument();
-        expect(screen.getByText('Finale')).toBeInTheDocument();
+        expect(screen.getByText('Quarter-final')).toBeInTheDocument();
+        expect(screen.getByText('Semi-final')).toBeInTheDocument();
+        expect(screen.getByText('Final')).toBeInTheDocument();
     });
 
-    it('should render "Runde X" for early rounds in large brackets', () => {
+    it('should render "Round X" for early rounds in large brackets', () => {
         const rounds = [
             [makeMockMatch('A', 'B'), makeMockMatch('C', 'D'), makeMockMatch('E', 'F'), makeMockMatch('G', 'H'),
             makeMockMatch('I', 'J'), makeMockMatch('K', 'L'), makeMockMatch('M', 'N'), makeMockMatch('O', 'P')],
@@ -56,8 +56,8 @@ describe('Bracket', () => {
             [makeMockMatch(null, null)],
         ];
         render(<Bracket rounds={rounds} />);
-        expect(screen.getByText('Runde 1')).toBeInTheDocument();
-        expect(screen.getByText('Viertelfinale')).toBeInTheDocument();
+        expect(screen.getByText('Round 1')).toBeInTheDocument();
+        expect(screen.getByText('Quarter-final')).toBeInTheDocument();
     });
 
     it('should display player names', () => {

@@ -34,9 +34,9 @@ describe('SetupPage', () => {
                 <SetupPage tournament={null} />
             </MemoryRouter>
         );
-        expect(screen.getByText(/Neues Turnier/)).toBeDefined();
+        expect(screen.getByText(/New tournament/)).toBeDefined();
         // Check for new toggle
-        expect(screen.getByText(/Preispool \/ Einsatz/)).toBeDefined();
+        expect(screen.getByText(/Prize pool \/ entry fee/)).toBeDefined();
     });
 
     it('toggles prize pool inputs', async () => {
@@ -47,12 +47,12 @@ describe('SetupPage', () => {
         );
 
         // Initially hidden
-        expect(screen.queryByText(/Einsatz pro Spieler/)).toBeNull();
+        expect(screen.queryByText(/Entry fee per player/)).toBeNull();
 
         // Toggle ON
         const checkboxes = screen.getAllByRole('checkbox');
         const prizeToggle = checkboxes.find(cb =>
-            cb.closest('.setting-row')?.textContent.includes('Preispool / Einsatz')
+            cb.closest('.setting-row')?.textContent.includes('Prize pool / entry fee')
         );
 
         expect(prizeToggle).toBeDefined();
@@ -60,9 +60,9 @@ describe('SetupPage', () => {
 
         // Now visible
         await waitFor(() => {
-            expect(screen.getByText(/Einsatz pro Spieler/)).toBeDefined();
+            expect(screen.getByText(/Entry fee per player/)).toBeDefined();
         });
-        expect(screen.getByText(/Gewinnverteilung/)).toBeDefined();
+        expect(screen.getByText(/Payout/)).toBeDefined();
     });
 
     it('sends entryFee: 0 when prize pool is disabled', async () => {
@@ -73,7 +73,7 @@ describe('SetupPage', () => {
         );
 
         // Setup base fields
-        fireEvent.change(screen.getByPlaceholderText(/z.B. Freitags-Turnier/), { target: { value: 'Test Cup' } });
+        fireEvent.change(screen.getByPlaceholderText(/Friday Night Darts/), { target: { value: 'Test Cup' } });
 
         // Mock specific socket response for create
         socket.emit.mockImplementation((event, data, callback) => {
@@ -83,7 +83,7 @@ describe('SetupPage', () => {
         });
 
         // Click create
-        const createBtn = screen.getByText(/Turnier erstellen/);
+        const createBtn = screen.getByText(/Create tournament/);
         fireEvent.click(createBtn);
 
         await waitFor(() => {
@@ -107,7 +107,7 @@ describe('SetupPage', () => {
         // Enable Prize Pool
         const checkboxes = screen.getAllByRole('checkbox');
         const prizeToggle = checkboxes.find(cb =>
-            cb.closest('.setting-row')?.textContent.includes('Preispool / Einsatz')
+            cb.closest('.setting-row')?.textContent.includes('Prize pool / entry fee')
         );
         fireEvent.click(prizeToggle);
 
@@ -123,7 +123,7 @@ describe('SetupPage', () => {
         });
 
         // Create
-        fireEvent.click(screen.getByText(/Turnier erstellen/));
+        fireEvent.click(screen.getByText(/Create tournament/));
 
         await waitFor(() => {
             expect(socket.emit).toHaveBeenCalledWith('create_tournament', expect.objectContaining({

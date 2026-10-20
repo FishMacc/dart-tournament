@@ -8,15 +8,14 @@ import TournamentPage from './pages/TournamentPage.jsx';
 import MobileLobby from './pages/MobileLobby.jsx';
 import MobileScoring from './pages/MobileScoring.jsx';
 import LiveMatchPage from './pages/LiveMatchPage.jsx';
-
-
+import { useI18n } from './i18n.jsx';
 
 export default function App() {
+    const { t } = useI18n();
     const [tournament, setTournament] = useState(null);
     const [hostTournament, setHostTournament] = useState(null);
     const [isHost, setIsHost] = useState(null);
     const [theme, setTheme] = useState(() => localStorage.getItem('dartvault-theme') || 'obsidian');
-
 
     // Apply theme
     useEffect(() => {
@@ -50,7 +49,7 @@ export default function App() {
     // Only the host PC (or a device with the admin link) manages the tournament;
     // everyone else gets the phone lobby.
     const getRootElement = () => {
-        if (isHost === null) return <p className="text-muted text-center" style={{ paddingTop: '4rem' }}>Verbinde mit Server...</p>;
+        if (isHost === null) return <p className="text-muted text-center" style={{ paddingTop: '4rem' }}>{t('app.connecting')}</p>;
         if (!isHost) return <MobileLobby tournament={tournament} />;
         if (!tournament) return <HomePage onGetStarted={() => { }} />;
         if (tournament.status === 'setup') return <SetupPage tournament={tournament} />;
@@ -73,7 +72,7 @@ export default function App() {
             </main>
             <footer className="footer">
                 <div className="container">
-                    DartVault &copy; {new Date().getFullYear()} — Professionelle Dart-Turnier-Software
+                    {t('app.footer', { year: new Date().getFullYear() })}
                 </div>
             </footer>
         </>

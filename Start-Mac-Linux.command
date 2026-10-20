@@ -3,12 +3,12 @@
 cd "$(dirname "$0")" || exit 1
 
 if ! command -v node >/dev/null 2>&1; then
-    echo "Node.js ist nicht installiert."
-    echo "Bitte die LTS-Version von https://nodejs.org installieren und danach erneut starten."
+    echo "Node.js is not installed."
+    echo "Please install the LTS version from https://nodejs.org and start again."
     (open https://nodejs.org/ || xdg-open https://nodejs.org/) >/dev/null 2>&1
-    read -r -p "Enter zum Schliessen..."
+    read -r -p "Press Enter to close..."
     exit 1
 fi
 
-echo "Dart Tournament wird gestartet... Dieses Fenster bitte NICHT schliessen!"
+echo "Starting Dart Tournament... Please do NOT close this window!"
 node scripts/start.mjs

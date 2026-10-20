@@ -6,9 +6,11 @@ import socket from '../socket.js';
 import Bracket from '../components/Bracket.jsx';
 import QRCodeDisplay from '../components/QRCodeDisplay.jsx';
 import StatsBoard from '../components/StatsBoard.jsx';
+import { useI18n } from '../i18n.jsx';
 
 export default function TournamentPage({ tournament, hostTournament }) {
     const navigate = useNavigate();
+    const { t, money, errorText } = useI18n();
 
     // Request host view with PINs on mount
     useEffect(() => {
@@ -56,7 +58,7 @@ export default function TournamentPage({ tournament, hostTournament }) {
     const handleStartMatch = (matchId) => {
         socket.emit('start_match', { matchId }, (res) => {
             if (!res.success) {
-                setMatchError(res.error);
+                setMatchError(errorText(res));
                 setTimeout(() => setMatchError(''), 3000);
             }
         });
@@ -97,7 +99,7 @@ export default function TournamentPage({ tournament, hostTournament }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div>
                     <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {tournament.name || 'Turnierbaum'}
+                        {tournament.name || t('tournament.bracket')}
                         {tournament.status === 'finished' && tournament.winner && (
                             <span className="badge badge-success" style={{ marginLeft: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                 <Trophy size={14} /> {tournament.winner.name}
@@ -105,9 +107,9 @@ export default function TournamentPage({ tournament, hostTournament }) {
                         )}
                     </h2>
                     <p className="text-muted" style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                        {tournament.type} • {tournament.players?.length} Spieler
-                        {tournament.settings?.doubleOut ? ' • Double-Out' : ''}
-                        {!requiresPin && ' • Ohne PIN'}
+                        {tournament.type} • {t('tournament.players', { count: tournament.players?.length || 0 })}
+                        {tournament.settings?.doubleOut ? t('tournament.doubleOut') : ''}
+                        {!requiresPin && t('tournament.noPin')}
                     </p>
                     {tournament.settings?.entryFee > 0 && (
                         <div style={{
@@ -123,9 +125,9 @@ export default function TournamentPage({ tournament, hostTournament }) {
                             fontWeight: 700,
                             fontSize: '0.85rem',
                         }}>
-                            <span>💰 Preispool:</span>
+                            <span>{t('tournament.prizePool')}</span>
                             <span>
-                                {(tournament.settings.entryFee * (tournament.players?.length || 0)).toFixed(2)} €
+                                {money(tournament.settings.entryFee * (tournament.players?.length || 0))}
                             </span>
                         </div>
                     )}
@@ -137,11 +139,11 @@ export default function TournamentPage({ tournament, hostTournament }) {
                             onClick={() => setHidePins(!hidePins)}
                             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                         >
-                            {hidePins ? <><Eye size={14} /> PINs zeigen</> : <><EyeOff size={14} /> PINs verstecken</>}
+                            {hidePins ? <><Eye size={14} /> {t('tournament.showPins')}</> : <><EyeOff size={14} /> {t('tournament.hidePins')}</>}
                         </button>
                     )}
                     <button className="btn btn-danger btn-sm" onClick={handleReset} id="btn-reset-tournament" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Trash2 size={14} /> Zurücksetzen
+                        <Trash2 size={14} /> {t('tournament.reset')}
                     </button>
                 </div>
             </div>
@@ -158,7 +160,7 @@ export default function TournamentPage({ tournament, hostTournament }) {
                 <div className="mb-4">
                     <h3 className="mb-2" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span className="badge badge-live" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Activity size={12} /> LIVE</span>
-                        Aktive Spiele
+                        {t('tournament.activeMatches')}
                     </h3>
                     <div className="active-matches-grid">
                         {activeMatches.map((match) => (
@@ -167,7 +169,7 @@ export default function TournamentPage({ tournament, hostTournament }) {
                                     <span className="active-match-name">{match.player1?.name}</span>
                                     {/* Display LEGS instead of SCORES */}
                                     <span className="active-match-score" style={{ color: 'var(--accent-primary)' }}>
-                                        Legs: {match.legs?.player1}
+                                        {t('tournament.legs', { n: match.legs?.player1 ?? 0 })}
                                     </span>
                                 </div>
                                 <div className="active-match-vs" style={{ fontSize: '0.8rem', opacity: 0.6 }}>VS</div>
@@ -175,13 +177,13 @@ export default function TournamentPage({ tournament, hostTournament }) {
                                     <span className="active-match-name">{match.player2?.name}</span>
                                     {/* Display LEGS instead of SCORES */}
                                     <span className="active-match-score" style={{ color: 'var(--accent-primary)' }}>
-                                        Legs: {match.legs?.player2}
+                                        {t('tournament.legs', { n: match.legs?.player2 ?? 0 })}
                                     </span>
                                 </div>
 
                                 <div className="active-match-footer">
                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        Score: {match.scores?.player1} - {match.scores?.player2}
+                                        {t('tournament.score', { a: match.scores?.player1, b: match.scores?.player2 })}
                                     </div>
 
                                     {requiresPin ? (
@@ -192,7 +194,7 @@ export default function TournamentPage({ tournament, hostTournament }) {
                                             </span>
                                         </div>
                                     ) : (
-                                        <span className="no-pin-badge"><Unlock size={12} /> Kein PIN</span>
+                                        <span className="no-pin-badge"><Unlock size={12} /> {t('tournament.noPinBadge')}</span>
                                     )}
                                     <button
                                         className="btn btn-primary btn-sm"
@@ -216,7 +218,7 @@ export default function TournamentPage({ tournament, hostTournament }) {
             {/* Waiting Matches */}
             {waitingMatches.length > 0 && (
                 <div className="mt-4">
-                    <h3 className="mb-2" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clock size={16} /> Wartende Spiele</h3>
+                    <h3 className="mb-2" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clock size={16} /> {t('tournament.waitingMatches')}</h3>
                     <div className="active-matches-grid">
                         {waitingMatches.map((match) => (
                             <div key={match.id} className="waiting-match-card" style={{ minWidth: '250px' }}>
@@ -232,7 +234,7 @@ export default function TournamentPage({ tournament, hostTournament }) {
                                         id={`btn-start-match-${match.id}`}
                                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                                     >
-                                        <Play size={14} /> Spiel Starten
+                                        <Play size={14} /> {t('tournament.startMatch')}
                                     </button>
 
                                     {requiresPin ? (
@@ -243,7 +245,7 @@ export default function TournamentPage({ tournament, hostTournament }) {
                                             </span>
                                         </div>
                                     ) : (
-                                        <span className="no-pin-badge"><Unlock size={12} /> Offen</span>
+                                        <span className="no-pin-badge"><Unlock size={12} /> {t('tournament.open')}</span>
                                     )}
                                 </div>
                             </div>
@@ -273,9 +275,9 @@ export default function TournamentPage({ tournament, hostTournament }) {
             {showResetConfirm && (
                 <div className="modal-overlay" onClick={() => setShowResetConfirm(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h3 style={{ marginBottom: '0.75rem' }}>Turnier zurücksetzen?</h3>
+                        <h3 style={{ marginBottom: '0.75rem' }}>{t('tournament.resetTitle')}</h3>
                         <p className="text-muted" style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-                            Alle Spielergebnisse und der Turnierbaum gehen unwiderruflich verloren.
+                            {t('tournament.resetText')}
                         </p>
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
                             <button
@@ -283,14 +285,14 @@ export default function TournamentPage({ tournament, hostTournament }) {
                                 onClick={() => setShowResetConfirm(false)}
                                 style={{ flex: 1 }}
                             >
-                                Abbrechen
+                                {t('tournament.cancel')}
                             </button>
                             <button
                                 className="btn btn-danger"
                                 onClick={confirmReset}
                                 style={{ flex: 1 }}
                             >
-                                <Trash2 size={14} /> Zurücksetzen
+                                <Trash2 size={14} /> {t('tournament.reset')}
                             </button>
                         </div>
                     </div>

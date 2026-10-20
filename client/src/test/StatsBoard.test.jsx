@@ -60,7 +60,7 @@ const createMockTournament = (overrides = {}) => ({
     ],
     status: 'finished',
     type: '501',
-    name: 'Test Turnier',
+    name: 'Test Cup',
     winner: null,
     ...overrides,
 });
@@ -71,10 +71,10 @@ describe('StatsBoard', () => {
         expect(container.innerHTML).toBe('');
     });
 
-    it('should render Turnierstatistik heading', () => {
+    it('should render statistics heading', () => {
         const tournament = createMockTournament();
         render(<StatsBoard tournament={tournament} />);
-        expect(screen.getByText('Turnierstatistik')).toBeInTheDocument();
+        expect(screen.getByText('Tournament statistics')).toBeInTheDocument();
     });
 
     it('should display player names', () => {
@@ -88,19 +88,19 @@ describe('StatsBoard', () => {
         const tournament = createMockTournament();
         render(<StatsBoard tournament={tournament} />);
         expect(screen.getByText('Name')).toBeInTheDocument();
-        expect(screen.getByText('Spiele')).toBeInTheDocument();
-        expect(screen.getByText('Siege')).toBeInTheDocument();
+        expect(screen.getByText('Matches')).toBeInTheDocument();
+        expect(screen.getByText('Wins')).toBeInTheDocument();
         expect(screen.getByText('Legs')).toBeInTheDocument();
         expect(screen.getByText('Avg (3)')).toBeInTheDocument();
-        expect(screen.getByText('Best Leg')).toBeInTheDocument();
-        expect(screen.getByText('Hi-Fin')).toBeInTheDocument();
+        expect(screen.getByText('Best leg')).toBeInTheDocument();
+        expect(screen.getByText('High finish')).toBeInTheDocument();
     });
 
     it('should filter players by name', () => {
         const tournament = createMockTournament();
         render(<StatsBoard tournament={tournament} />);
 
-        const filterInput = screen.getByPlaceholderText('Spieler suchen...');
+        const filterInput = screen.getByPlaceholderText('Search players...');
         fireEvent.change(filterInput, { target: { value: 'Alice' } });
 
         expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -120,13 +120,13 @@ describe('StatsBoard', () => {
             winner: { id: 'p1', name: 'Alice' },
         });
         render(<StatsBoard tournament={tournament} />);
-        expect(screen.getByText('Der Sieger ist')).toBeInTheDocument();
+        expect(screen.getByText('And the winner is')).toBeInTheDocument();
     });
 
     it('should not show winner spotlight when no winner', () => {
         const tournament = createMockTournament();
         render(<StatsBoard tournament={tournament} />);
-        expect(screen.queryByText('Der Sieger ist')).not.toBeInTheDocument();
+        expect(screen.queryByText('And the winner is')).not.toBeInTheDocument();
     });
 
     it('should handle tournament with no players', () => {
@@ -143,7 +143,7 @@ describe('StatsBoard', () => {
         fireEvent.click(screen.getByText('Name'));
 
         // Click on "Spiele" to sort
-        fireEvent.click(screen.getByText('Spiele'));
+        fireEvent.click(screen.getByText('Matches'));
 
         // Should not crash
         expect(screen.getByText('Alice')).toBeInTheDocument();
